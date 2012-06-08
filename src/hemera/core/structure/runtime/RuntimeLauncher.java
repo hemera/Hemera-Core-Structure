@@ -52,16 +52,16 @@ public abstract class RuntimeLauncher implements Daemon {
 	/**
 	 * Constructor of <code>RuntimeLauncher</code>.
 	 */
-	public RuntimeLauncher() {
+	protected RuntimeLauncher() {
 		super();
 	}
 
 	/**
 	 * Constructor of <code>RuntimeLauncher</code>.
 	 * @param configPath The <code>String</code> path to
-	 * server runtime environment configuration file.
+	 * runtime environment configuration file.
 	 */
-	public RuntimeLauncher(final String configPath) {
+	protected RuntimeLauncher(final String configPath) {
 		this.configPath = configPath;
 	}
 
@@ -129,8 +129,8 @@ public abstract class RuntimeLauncher implements Daemon {
 	}
 
 	/**
-	 * Construct the server runtime environment instance
-	 * based on the loaded configuration data.
+	 * Construct the runtime environment instance based
+	 * on the loaded configuration data.
 	 * @param config The loaded configuration data.
 	 * @return The <code>IRuntime</code> instance.
 	 * @throws IOException If any file processing failed.
