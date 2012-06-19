@@ -24,6 +24,14 @@ import hemera.core.utility.config.Configuration;
  * information, and logic to support proper operations
  * of the responsible functionality or feature.
  * <p>
+ * An instance of <code>IModule</code> is defined as a
+ * container REST resource that can be accessed at the
+ * defined path via HTTP requests. The module delegates
+ * the actual request processing and response generation
+ * to its processors. Each processor is a sub-resource
+ * of the module container resource. A typical access
+ * should be made at <code>/module/processor</code>.
+ * <p>
  * <code>IModule</code> defines the injection methods
  * to allow hosting runtime environment to inject the
  * provided services and utility units into the module,
@@ -76,7 +84,7 @@ import hemera.core.utility.config.Configuration;
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
-public interface IModule {
+public interface IModule extends IRESTResource {
 	
 	/**
 	 * Inject the runtime execution service to this module
@@ -186,17 +194,23 @@ public interface IModule {
 	 * The returned value is used in the initialization
 	 * process once. The values should not change from
 	 * time to time as the processors should be defined
-	 * at the compile time of a module.
+	 * at the initialization time of a module.
 	 * @return The <code>Iterable</code> of all the
 	 * <code>IProcessor</code> instances.
 	 */
 	public Iterable<IProcessor<?, ?>> getProcessors();
 	
 	/**
-	 * Retrieve the processor responsible for the given
-	 * request type.
-	 * @param type The <code>T</code> request type.
+	 * Retrieve the processor defined for the given
+	 * REST access path.
+	 * <p>
+	 * The returned value is set in the initialization
+	 * process once. The value should not change from
+	 * time to time as the processors should be defined
+	 * at the initialization time of a module.
+	 * @param path The <code>String</code> REST access
+	 * path to check.
 	 * @return The <code>IProcessor</code> instance.
 	 */
-	public <T extends IRequestType> IProcessor<T, ?> getProcessor(final T type);
+	public IProcessor<?, ?> getProcessor(final String path);
 }

@@ -6,10 +6,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import hemera.core.execution.ExecutionService;
-import hemera.core.execution.exception.FileExceptionHandler;
 import hemera.core.execution.interfaces.IExecutionService;
-import hemera.core.execution.interfaces.exception.IExceptionHandler;
 import hemera.core.structure.interfaces.IModule;
 import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.IRuntimeHandle;
@@ -45,8 +42,8 @@ public abstract class Runtime implements IRuntime {
 	 */
 	private final Lock lock;
 	/**
-	 * The <code>ConcurrentMap</code> of <code>String</code>
-	 * module class name to <code>IModule</code>
+	 * The <code>ConcurrentMap</code> of REST path
+	 * <code>String</code> to <code>IModule</code>
 	 * instance.
 	 */
 	private final ConcurrentMap<String, IModule> modules;
@@ -65,33 +62,12 @@ public abstract class Runtime implements IRuntime {
 
 	/**
 	 * Constructor of <code>Runtime</code>.
-	 * <p>
-	 * This constructor utilizes the internal default
-	 * <code>FileExceptionHandler</code> implementation
-	 * as the exception handler for the runtime.
-	 * @param count The <code>int</code> number of
-	 * foreground assist executor threads to be used
-	 * for notifying processors and executing other
-	 * foreground tasks.
+	 * @param service The <code>IExecutionService</code>
+	 * used to dispatch request processing.
 	 */
-	protected Runtime(final int count) {
-		this(count, new FileExceptionHandler());
-	}
-
-	/**
-	 * Constructor of <code>Runtime</code>.
-	 * @param count The <code>int</code> number of
-	 * foreground assist executor threads to be used
-	 * for notifying processors and executing other
-	 * foreground tasks.
-	 * @param exceptionHandler The instance of the
-	 * <code>IExceptionHandler</code> used for execution
-	 * service to handle exceptions.
-	 */
-	protected Runtime(final int count, final IExceptionHandler exceptionHandler) {
+	protected Runtime(final IExecutionService service) {
 		this.logger = FileLogger.getLogger(Runtime.class);
-		// Construct services.
-		this.service = new ExecutionService(count, exceptionHandler);
+		this.service = service;
 		this.handle = new RuntimeHandle();
 		// Internal fields.
 		this.lock = new ReentrantLock();
@@ -101,7 +77,7 @@ public abstract class Runtime implements IRuntime {
 	}
 
 	@Override
-	public final void activate() throws Exception {
+	public final void activate() {
 		this.lock.lock();
 		try {
 			if (this.activated) return;
@@ -115,7 +91,7 @@ public abstract class Runtime implements IRuntime {
 			this.logger.info("Runtime environment activated");
 		} catch (Exception e) {
 			this.logger.severe("Runtime activation failed");
-			throw e;
+			this.logger.exception(e);
 		} finally {
 			this.lock.unlock();
 		}
@@ -161,7 +137,6 @@ public abstract class Runtime implements IRuntime {
 					this.logger.exception(e);
 				}
 			}
-			this.modules.clear();
 			// Subclass shutdown.
 			try {
 				this.shutdownComponents();
@@ -244,24 +219,24 @@ public abstract class Runtime implements IRuntime {
 	 * module to be added and hosted by the runtime.
 	 * @return The added <code>IModule</code> instance if
 	 * the insertion is successful. <code>null</code> if
-	 * the module class is already cached.
+	 * the module defined REST path already exists.
 	 * @throws IllegalAccessException If instantiation
 	 * failed.
 	 * @throws InstantiationException If instantiation
 	 * failed.
 	 */
 	private IModule addCache(final Class<? extends IModule> moduleclass) throws InstantiationException, IllegalAccessException {
-		final String classname = moduleclass.getName();
-		// Early check.
-		if (this.modules.containsKey(classname)) return null;
-		// Instantiate module and try to add.
 		final IModule module = moduleclass.newInstance();
-		final IModule prev = this.modules.putIfAbsent(classname, module);
+		final String path = module.getPath();
+		// Early check.
+		if (this.modules.containsKey(path)) return null;
+		// Try to add.
+		final IModule prev = this.modules.putIfAbsent(path, module);
 		final boolean succeeded = (prev == null);
 		// Log duplicates.
 		if (!succeeded) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Duplicate addition of module: ").append(classname);
+			builder.append("Duplicate addition of module at REST path: ").append(path);
 			this.logger.warning(builder.toString());
 			return null;
 		}
@@ -282,14 +257,13 @@ public abstract class Runtime implements IRuntime {
 	}
 
 	@Override
-	public final boolean remove(final Class<? extends IModule> moduleclass) throws Exception {
+	public final boolean remove(final String path) throws Exception {
 		this.statusCheck();
 		// Remove from cache.
-		final String classname = moduleclass.getName();
-		final IModule module = this.modules.remove(classname);
+		final IModule module = this.modules.remove(path);
 		if (module == null) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Removing module: ").append(classname);
+			builder.append("Removing module at REST path: ").append(path);
 			builder.append("failed. Runtime does not host the module");
 			this.logger.warning(builder.toString());
 			return false;
@@ -298,13 +272,13 @@ public abstract class Runtime implements IRuntime {
 			module.dispose();
 			// Logging.
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Module: ").append(classname);
+			builder.append("Module at REST path: ").append(path);
 			builder.append(" removed from runtime environment");
 			this.logger.info(builder.toString());
 			return true;
 		} catch (Exception e) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Removing of module: ").append(classname);
+			builder.append("Removing of module at REST path: ").append(path);
 			builder.append(" failed");
 			this.logger.severe(builder.toString());
 			throw e;
@@ -322,8 +296,8 @@ public abstract class Runtime implements IRuntime {
 	}
 
 	@Override
-	public IModule getModule(final Class<? extends IModule> moduleclass) {
-		return this.modules.get(moduleclass.getName());
+	public IModule getModule(final String path) {
+		return this.modules.get(path);
 	}
 
 	/**

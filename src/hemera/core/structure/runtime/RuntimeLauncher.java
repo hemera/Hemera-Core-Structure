@@ -1,12 +1,19 @@
 package hemera.core.structure.runtime;
 
-import hemera.core.execution.interfaces.exception.IExceptionHandler;
+import hemera.core.execution.assisted.AssistedService;
+import hemera.core.execution.exception.FileExceptionHandler;
+import hemera.core.execution.interfaces.IExceptionHandler;
+import hemera.core.execution.interfaces.IExecutionService;
+import hemera.core.execution.interfaces.IServiceListener;
+import hemera.core.execution.listener.FileServiceListener;
+import hemera.core.execution.scalable.ScalableService;
 import hemera.core.structure.enumn.KCAutoDeploy;
 import hemera.core.structure.enumn.KCRuntime;
 import hemera.core.structure.interfaces.IModule;
 import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.utility.config.ConfigImporter;
 import hemera.core.utility.config.Configuration;
+import hemera.core.utility.config.TimeData;
 import hemera.core.utility.config.xml.XMLParser;
 import hemera.core.utility.config.xml.XMLTag;
 import hemera.core.utility.logging.CLogging;
@@ -32,8 +39,8 @@ import org.apache.commons.daemon.DaemonInitException;
  * process.
  * <p>
  * <code>RuntimeLauncher</code> requires one argument
- * to the <code>main</code> method for launching, the
- * file path for the configuration file.
+ * to the <code>init</code> method for launching, the
+ * file path for the runtime configuration file.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0
@@ -93,13 +100,13 @@ public abstract class RuntimeLauncher implements Daemon {
 	 */
 	public IRuntime launch() throws Exception {
 		// Load configuration.
-		if (this.configPath == null) throw new IllegalArgumentException("Configruation file path must be specified.");
 		final ConfigImporter importer = new ConfigImporter();
 		final Configuration config = importer.load(new File(this.configPath));
 		// Set environment values.
 		this.setEnvironmentValues(config);
 		// Create runtime.
-		final IRuntime runtime = this.constructRuntime(config);
+		final IExecutionService service = this.newExecutionService(config);
+		final IRuntime runtime = this.newRuntime(service, config);
 		try {
 			// Activate.
 			runtime.activate();
@@ -129,10 +136,73 @@ public abstract class RuntimeLauncher implements Daemon {
 	}
 
 	/**
-	 * Construct the runtime environment instance based
-	 * on the loaded configuration data.
-	 * @param config The loaded configuration data.
-	 * @return The <code>IRuntime</code> instance.
+	 * Create a new execution service listener instance
+	 * based on configuration values.
+	 * @param config The <code>Configuration</code> for
+	 * the runtime environment.
+	 * @return The <code>IServiceListener</code> instance.
+	 * @throws IOException If any file processing failed.
+	 * @throws ClassNotFoundException If custom service
+	 * listener class cannot be found in the JAR file.
+	 * @throws IllegalAccessException If custom service
+	 * listener implementation default constructor cannot
+	 * be accessed.
+	 * @throws InstantiationException If custom service
+	 * listener implementation cannot be instantiated.
+	 */
+	@SuppressWarnings("unchecked")
+	private IServiceListener newServiceListener(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+		final String listenerJarLocation = config.getStringValue(KCRuntime.ExecutionListenerJarLocation);
+		final String listenerClassname = config.getStringValue(KCRuntime.ExecutionListenerClassname);
+		if (listenerJarLocation != null && listenerClassname != null) {
+			final File jarFile = new File(listenerJarLocation);
+			final URLClassLoader classloader = new URLClassLoader(new URL[] {jarFile.toURI().toURL()});
+			final Class<IServiceListener> c = (Class<IServiceListener>)classloader.loadClass(listenerClassname);
+			return c.newInstance();
+		} else {
+			return new FileServiceListener();
+		}
+	}
+
+	/**
+	 * Create a new execution service based on runtime
+	 * configuration.
+	 * @param config The <code>Configuration</code> for
+	 * the runtime environment.
+	 * @return The <code>IExecutionService</code> instance.
+	 * @throws IOException If any file processing failed.
+	 * @throws ClassNotFoundException If custom class
+	 * cannot be found in the JAR file.
+	 * @throws IllegalAccessException If custom class
+	 * implementations default constructor cannot be
+	 * accessed.
+	 * @throws InstantiationException If custom class
+	 * implementations cannot be instantiated.
+	 */
+	private IExecutionService newExecutionService(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+		final IExceptionHandler handler = this.newExceptionHandler(config);
+		final IServiceListener listener = this.newServiceListener(config);
+		// Create service based on configuration.
+		final boolean useScalableService = config.getBooleanValue(KCRuntime.UseScalableService);
+		if (!useScalableService) {
+			final int executorCount = config.getIntegerValue(KCRuntime.AssistedServiceExecutorCount);
+			final int executorBufferSize = config.getIntegerValue(KCRuntime.AssistedServiceExecutorMaxBufferSize);
+			final TimeData idletime = config.getTimeData(KCRuntime.AssistedServiceExecutorIdleTime);
+			return new AssistedService(handler, listener, executorCount, executorBufferSize, idletime.value, idletime.unit);
+		} else {
+			final int executorMin = config.getIntegerValue(KCRuntime.ScalableServiceExecutorMinimum);
+			final int executorMax = config.getIntegerValue(KCRuntime.ScalableServiceExecutorMaximum);
+			final TimeData timeout = config.getTimeData(KCRuntime.ScalableServiceExecutorTimeout);
+			return new ScalableService(handler, listener, executorMin, executorMax, timeout.value, timeout.unit);
+		}
+	}
+
+	/**
+	 * Create a new exception handler instance based on
+	 * configuration values.
+	 * @param config The <code>Configuration</code> for
+	 * the runtime environment.
+	 * @return The <code>IExceptionHandler</code> instance.
 	 * @throws IOException If any file processing failed.
 	 * @throws ClassNotFoundException If custom exception
 	 * handler class cannot be found in the JAR file.
@@ -143,48 +213,28 @@ public abstract class RuntimeLauncher implements Daemon {
 	 * handler implementation cannot be instantiated.
 	 */
 	@SuppressWarnings("unchecked")
-	private IRuntime constructRuntime(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-		// Extract configuration values from configuration importer.
-		final Integer executorCount = config.getIntegerValue(KCRuntime.ExecutorCount);
+	private IExceptionHandler newExceptionHandler(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		final String exceptionJarLocation = config.getStringValue(KCRuntime.ExceptionHandlerJarLocation);
 		final String exceptionClassname = config.getStringValue(KCRuntime.ExceptionHandlerClassname);
-		// Construct runtime.
 		if (exceptionJarLocation != null && exceptionClassname != null) {
 			final File jarFile = new File(exceptionJarLocation);
 			final URLClassLoader classloader = new URLClassLoader(new URL[] {jarFile.toURI().toURL()});
 			final Class<IExceptionHandler> c = (Class<IExceptionHandler>)classloader.loadClass(exceptionClassname);
-			final IExceptionHandler exceptionHandler = c.newInstance();
-			return this.newRuntime(executorCount, exceptionHandler, config);
+			return c.newInstance();
 		} else {
-			return this.newRuntime(executorCount, config);
+			return new FileExceptionHandler();
 		}
 	}
-	
-	/**
-	 * Create a new runtime based on given arguments.
-	 * @param count The <code>int</code> number of
-	 * foreground assist executor threads to be used
-	 * for notifying processors and executing other
-	 * foreground tasks.
-	 * @param config The loaded configuration data.
-	 * @return The <code>IRuntime</code> instance.
-	 */
-	protected abstract IRuntime newRuntime(final int count, final Configuration config);
 
 	/**
 	 * Create a new runtime based on given arguments.
-	 * @param count The <code>int</code> number of
-	 * foreground assist executor threads to be used
-	 * for notifying processors and executing other
-	 * foreground tasks.
-	 * @param exceptionHandler The instance of the
-	 * <code>IExceptionHandler</code> used for execution
-	 * service to handle exceptions.
+	 * @param service The <code>IExecutionService</code>
+	 * used to dispatch request processing.
 	 * @param config The loaded configuration data.
 	 * @return The <code>IRuntime</code> instance.
 	 */
-	protected abstract IRuntime newRuntime(final int count, final IExceptionHandler exceptionHandler, final Configuration config);
-	
+	protected abstract IRuntime newRuntime(final IExecutionService service, final Configuration config);
+
 	/**
 	 * Deploy any modules that are defined in the auto-
 	 * deployment configuration file.

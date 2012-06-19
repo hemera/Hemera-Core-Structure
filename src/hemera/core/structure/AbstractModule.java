@@ -6,7 +6,6 @@ import java.util.Map;
 import hemera.core.execution.interfaces.IExecutionService;
 import hemera.core.structure.interfaces.IModule;
 import hemera.core.structure.interfaces.IProcessor;
-import hemera.core.structure.interfaces.IRequestType;
 import hemera.core.structure.interfaces.runtime.IRuntimeHandle;
 import hemera.core.utility.logging.FileLogger;
 
@@ -19,27 +18,24 @@ import hemera.core.utility.logging.FileLogger;
  * <code>AbstractModule</code> only provides the most
  * commonly shared implementations among all modules.
  * It defines some of the module life-cycle stages.
- * <p>
- * <code>AbstractModule</code> uses <code>Map</code>
- * as the data structure for storing all processors to
- * guarantee automatic duplicate check. This implies
- * that the iteration performance on all processors are
- * poor, thus should be avoided.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
 public abstract class AbstractModule implements IModule {
 	/**
-	 * The <code>Map</code> of <code>IRequestType</code>
-	 * <code>String</code> ID to <code>IProcessor</code>
-	 * instances.
-	 */
-	private final Map<String, IProcessor<?, ?>> processors;
-	/**
 	 * The <code>FileLogger</code> instance.
 	 */
 	protected final FileLogger logger;
+	/**
+	 * The <code>Map</code> of <code>String</code>
+	 * REST path to <code>IProcessor</code> instances.
+	 * <p>
+	 * The contents of this map should not change once
+	 * the initialization stage completes, thus thread
+	 * safety is not a concern.
+	 */
+	private final Map<String, IProcessor<?, ?>> processors;
 	/**
 	 * The <code>IExecutionService</code> instance.
 	 * <p>
@@ -61,8 +57,8 @@ public abstract class AbstractModule implements IModule {
 	 * Constructor of <code>AbstractModule</code>.
 	 */
 	protected AbstractModule() {
-		this.processors = new HashMap<String, IProcessor<?,?>>();
 		this.logger = FileLogger.getLogger(this.getClass());
+		this.processors = new HashMap<String, IProcessor<?, ?>>();
 	}
 	
 	@Override
@@ -84,13 +80,13 @@ public abstract class AbstractModule implements IModule {
 		if (processors != null) {
 			for (int i = 0; i < processors.length; i++) {
 				IProcessor<?, ?> processor = processors[i];
-				final String requesttype = processor.getRequestType().getID();
-				final Object existing = this.processors.put(requesttype, processor);
+				final String path = processor.getPath();
+				final Object existing = this.processors.put(path, processor);
 				// Override processor.
 				if (existing != null) {
 					final StringBuilder builder = new StringBuilder();
-					builder.append("There are more than one processor handling the same request type");
-					builder.append(requesttype).append(".");
+					builder.append("There are more than one processor defined at the same REST path:");
+					builder.append(path).append(".");
 					this.logger.warning(builder.toString());
 				}
 			}
@@ -129,8 +125,6 @@ public abstract class AbstractModule implements IModule {
 		}
 		// Dispose module specific components.
 		this.disposeComponents();
-		// Clear all memory references.
-		this.processors.clear();
 	}
 	
 	/**
@@ -148,8 +142,7 @@ public abstract class AbstractModule implements IModule {
 	}
 	
 	@Override
-	@SuppressWarnings("unchecked")
-	public <T extends IRequestType> IProcessor<T, ?> getProcessor(final T type) {
-		return (IProcessor<T, ?>)this.processors.get(type.getID());
+	public IProcessor<?, ?> getProcessor(final String path) {
+		return this.processors.get(path);
 	}
 }

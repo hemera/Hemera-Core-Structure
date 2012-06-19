@@ -7,7 +7,8 @@ import hemera.core.structure.interfaces.IModule;
 /**
  * <code>IRuntime</code> defines the interface of the
  * system environment container that hosts a set of
- * module instances forming an application. It provides
+ * module instances that can be accessed via the defined
+ * REST access paths forming an application. It provides
  * a set of essential hardware abstraction services to
  * the hosted module instances.
  * <p>
@@ -16,14 +17,9 @@ import hemera.core.structure.interfaces.IModule;
  * five-stage life-cycle design and invokes appropriate
  * methods for each of the stages. Specifically, upon
  * successful adding, a module instance is instantiated,
- * customized, initialized, then activated. And all added
- * instances are disposed when removed or during runtime
- * shutdown.
- * <p>
- * A single instance of <code>IRuntime</code> should
- * be allocated for a single physical or virtual
- * machine, as its internal services are automatically
- * adjusted to fully utilize the underlying hardware.
+ * customized, initialized, then activated. And all
+ * added instances are disposed when removed or during
+ * runtime shutdown.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0
@@ -43,10 +39,8 @@ public interface IRuntime {
 	 * only allow a single one to execute. This method
 	 * shares the same lock as the <code>shutdown</code>
 	 * method.
-	 * @throws Exception If any activation procedure
-	 * failed.
 	 */
-	public void activate() throws Exception;
+	public void activate();
 	
 	/**
 	 * Shutdown the runtime environment along with all
@@ -96,8 +90,8 @@ public interface IRuntime {
 	
 	/**
 	 * Add an instance of the given module class to the
-	 * runtime environment with its implementation class
-	 * name as its unique identifier.
+	 * runtime environment with its defined REST path as
+	 * its unique identifier.
 	 * <p>
 	 * Adding modules using this method will skip the
 	 * module's customization stage.
@@ -108,16 +102,16 @@ public interface IRuntime {
 	 * module to be added and hosted by the runtime.
 	 * @return <code>true</code> if module instance is
 	 * successfully added and hosted. <code>false</code>
-	 * if there already exists an instance of the same
-	 * class.
+	 * if there already exists a module defined at the
+	 * REST path.
 	 * @throws Exception If any procedure failed.
 	 */
 	public boolean add(final Class<? extends IModule> moduleclass) throws Exception;
 	
 	/**
 	 * Add an instance of the given module class to the
-	 * runtime environment with its implementation class
-	 * name as its unique identifier, and the specified
+	 * runtime environment with its defined REST path as
+	 * its unique identifier, and the specified
 	 * configuration stream for module customization.
 	 * <p>
 	 * This method provides the necessary thread-safety
@@ -130,33 +124,34 @@ public interface IRuntime {
 	 * does not need to be customized.
 	 * @return <code>true</code> if module instance is
 	 * successfully added and hosted. <code>false</code>
-	 * if there already exists an instance of the same
-	 * class.
+	 * if there already exists a module defined at the
+	 * REST path.
 	 * @throws Exception If any procedure failed.
 	 */
 	public boolean add(final Class<? extends IModule> moduleclass, final InputStream configStream) throws Exception;
 	
 	/**
-	 * Remove the module instance with with given class
-	 * from the runtime environment and dispose it.
+	 * Remove the module instance with with given REST
+	 * path from the runtime environment and dispose it.
 	 * <p>
 	 * This method automatically invokes the module's
 	 * <code>dispose</code> method to perform disposal.
-	 * @param moduleclass The <code>Class</code> of the
-	 * module to be removed from the runtime.
+	 * @param path The <code>String</code> REST access
+	 * path to check.
 	 * @return <code>true</code> if such a module exists
 	 * and is successfully removed and disposed.
 	 * <code>false</code> if there is no such module.
 	 * @throws Exception If module disposal failed.
 	 */
-	public boolean remove(final Class<? extends IModule> moduleclass) throws Exception;
+	public boolean remove(final String path) throws Exception;
 	
 	/**
-	 * Retrieve the module with given class.
-	 * @param moduleclass The <code>Class</code> of the
-	 * module to retrieve.
+	 * Retrieve the module defined for the given REST
+	 * access path.
+	 * @param path The <code>String</code> REST access
+	 * path to check.
 	 * @return The <code>IModule</code> instance. Or
 	 * <code>null</code> if there is no such module.
 	 */
-	public IModule getModule(final Class<? extends IModule> moduleclass);
+	public IModule getModule(final String path);
 }

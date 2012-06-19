@@ -1,9 +1,9 @@
 package hemera.core.structure;
 
-import java.util.Map;
-
+import hemera.core.structure.enumn.ERedirect;
 import hemera.core.structure.interfaces.IProcessor;
-import hemera.core.structure.interfaces.IRequestType;
+import hemera.core.structure.interfaces.IRequest;
+import hemera.core.structure.interfaces.IResponse;
 
 /**
  * <code>AbstractProcessor</code> defines abstraction
@@ -15,11 +15,13 @@ import hemera.core.structure.interfaces.IRequestType;
  * <code>AbstractProcessor</code> defines the default
  * activeness value to be <code>true</code>. In other
  * words, the processor instance is by default active.
+ * At the same time, the processor defines its default
+ * request redirecting behavior to be invoke only.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
-public abstract class AbstractProcessor<T extends IRequestType, R> implements IProcessor<T, R> {
+public abstract class AbstractProcessor<T extends IRequest, R extends IResponse> implements IProcessor<T, R> {
 	/**
 	 * The <code>Boolean</code> activeness flag.
 	 * <p>
@@ -49,31 +51,46 @@ public abstract class AbstractProcessor<T extends IRequestType, R> implements IP
 	}
 
 	@Override
-	public R process(final Map<String, Object> request) {
+	public final R process(final T request) {
 		if(!this.active) return null;
 		return this.doProcess(request);
 	}
 	
 	/**
-	 * Perform the actual message processing logic with
-	 * given request data.
+	 * Perform the actual request processing logic with
+	 * given request.
 	 * <p>
 	 * This method must provide necessary thread-safety
 	 * guarantees with high concurrency capabilities to
 	 * allow concurrent invocations.
-	 * @param request The <code>Map</code> contents of
-	 * a request to be processed.
+	 * @param request The <code>T</code> request to be
+	 * processed.
 	 * @return The <code>R</code> processing result.
 	 */
-	protected abstract R doProcess(final Map<String, Object> request);
+	protected abstract R doProcess(final T request);
 
 	@Override
 	public void setActive(final boolean active) {
 		this.active = active;
 	}
+	
+	@Override
+	public String getRedirectURI(final T request) {
+		return null;
+	}
 
 	@Override
-	public boolean isActive() {
+	public String getRedirectURI(final T request, final R response) {
+		return null;
+	}
+
+	@Override
+	public ERedirect getRedirectBehavior(final T request) {
+		return ERedirect.Invoke;
+	}
+
+	@Override
+	public final boolean isActive() {
 		return this.active;
 	}
 }

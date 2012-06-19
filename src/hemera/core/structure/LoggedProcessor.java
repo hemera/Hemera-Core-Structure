@@ -1,9 +1,8 @@
 package hemera.core.structure;
 
-import java.util.Map;
-
 import hemera.core.structure.AbstractProcessor;
-import hemera.core.structure.interfaces.IRequestType;
+import hemera.core.structure.interfaces.IRequest;
+import hemera.core.structure.interfaces.IResponse;
 import hemera.core.utility.logging.FileLogger;
 
 /**
@@ -17,7 +16,8 @@ import hemera.core.utility.logging.FileLogger;
  * sub-classes to directly throw all exceptions
  * without implementing exception logging. However,
  * subclasses should still catch relevant exceptions
- * to provide proper exception handling.
+ * to provide proper exception handling in addition
+ * to the provided logging.
  * <p>
  * In case of an exception occurs during the request
  * processing, this processor still returns a value
@@ -27,7 +27,7 @@ import hemera.core.utility.logging.FileLogger;
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
-public abstract class LoggedProcessor<T extends IRequestType, R> extends AbstractProcessor<T, R> {
+public abstract class LoggedProcessor<T extends IRequest, R extends IResponse> extends AbstractProcessor<T, R> {
 	/**
 	 * The <code>FileLogger</code> instance.
 	 */
@@ -54,7 +54,7 @@ public abstract class LoggedProcessor<T extends IRequestType, R> extends Abstrac
 	}
 	
 	@Override
-	protected R doProcess(final Map<String, Object> request) {
+	protected R doProcess(final T request) {
 		try {
 			return this.processRequest(request);
 		} catch (final Exception e) {
@@ -65,7 +65,7 @@ public abstract class LoggedProcessor<T extends IRequestType, R> extends Abstrac
 	
 	/**
 	 * Perform the actual request processing logic with
-	 * given request data.
+	 * given request.
 	 * <p>
 	 * This method must provide necessary thread-safety
 	 * guarantees with high concurrency capabilities to
@@ -76,22 +76,22 @@ public abstract class LoggedProcessor<T extends IRequestType, R> extends Abstrac
 	 * though implementations should still try to catch
 	 * important exceptions to provide more detailed
 	 * logging in addition to the exception stack-trace.
-	 * @param request The <code>Map</code> contents of
-	 * a request to be processed.
+	 * @param request The <code>T</code> request to be
+	 * processed.
 	 * @throws Exception If any processing logic failed.
 	 * <code>LoggedProcessor</code> handles exceptions
 	 * directly log them using the logger.
 	 */
-	protected abstract R processRequest(final Map<String, Object> request) throws Exception;
+	protected abstract R processRequest(final T request) throws Exception;
 	
 	/**
 	 * Build return response value when the specified
-	 * exception has occurred with given request data.
-	 * @param request The <code>Map</code> contents of
-	 * a request to be processed.
+	 * exception has occurred with given request.
+	 * @param request The <code>T</code> request to be
+	 * processed.
 	 * @param e The <code>Exception</code> thrown during
 	 * the processing of the request.
 	 * @return The <code>R</code> response value.
 	 */
-	protected abstract R exceptionResponse(final Map<String, Object> request, final Exception e);
+	protected abstract R exceptionResponse(final T request, final Exception e);
 }
