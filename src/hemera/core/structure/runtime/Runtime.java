@@ -102,7 +102,10 @@ public abstract class Runtime implements IRuntime {
 	 * activation process.
 	 * <p>
 	 * This method is guaranteed to be invoked once
-	 * and once only under the activation lock.
+	 * and once only under the activation lock. This
+	 * is the last step of the runtime environment
+	 * activation process, after all the services
+	 * have been activated.
 	 * @throws Exception If any procedures failed.
 	 */
 	protected abstract void activateComponents() throws Exception;
