@@ -8,6 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import hemera.core.execution.interfaces.IExecutionService;
 import hemera.core.structure.interfaces.IModule;
+import hemera.core.structure.interfaces.runtime.IProcessorRegistry;
 import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.IRuntimeHandle;
 import hemera.core.utility.config.ConfigImporter;
@@ -35,6 +36,10 @@ public abstract class Runtime implements IRuntime {
 	 * The <code>IRuntimeHandle</code> instance.
 	 */
 	protected final IRuntimeHandle handle;
+	/**
+	 * The <code>ProcessorRegistry</code> instance.
+	 */
+	private final ProcessorRegistry registry;
 	/**
 	 * The <code>Lock</code> used to synchronize the
 	 * <code>activate</code> and <code>shutdown</code>
@@ -69,8 +74,11 @@ public abstract class Runtime implements IRuntime {
 		this.logger = FileLogger.getLogger(Runtime.class);
 		this.service = service;
 		this.handle = new RuntimeHandle();
+		this.registry = new ProcessorRegistry();
 		// Internal fields.
 		this.lock = new ReentrantLock();
+		// Use default concurrency level since the number of
+		// concurrent updating threads shouldn't be too large.
 		this.modules = new ConcurrentHashMap<String, IModule>();
 		this.importer = new ConfigImporter();
 		this.activated = false;
@@ -199,6 +207,9 @@ public abstract class Runtime implements IRuntime {
 			module.initialize();
 			// Activation.
 			module.activate();
+			// Register processors after module is fully activated
+			// so incoming requests can be processed properly.
+			this.registry.register(module);
 			// Logging.
 			final StringBuilder builder = new StringBuilder();
 			builder.append("Addition of module: ").append(moduleclass.getName());
@@ -301,6 +312,11 @@ public abstract class Runtime implements IRuntime {
 	@Override
 	public IModule getModule(final String path) {
 		return this.modules.get(path);
+	}
+	
+	@Override
+	public IProcessorRegistry getProcessorRegistry() {
+		return this.registry;
 	}
 
 	/**

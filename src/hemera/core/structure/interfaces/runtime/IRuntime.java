@@ -154,4 +154,12 @@ public interface IRuntime {
 	 * <code>null</code> if there is no such module.
 	 */
 	public IModule getModule(final String path);
+	
+	/**
+	 * Retrieve the read-only processor registry that
+	 * provides access to all the processors.
+	 * @return The <code>IProcessorRegistry</code>
+	 * instance.
+	 */
+	public IProcessorRegistry getProcessorRegistry();
 }
