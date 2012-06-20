@@ -5,6 +5,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import hemera.core.structure.interfaces.IModule;
 import hemera.core.structure.interfaces.IProcessor;
+import hemera.core.structure.interfaces.IRequest;
+import hemera.core.structure.interfaces.IResponse;
 import hemera.core.structure.interfaces.runtime.IProcessorRegistry;
 import hemera.core.utility.logging.FileLogger;
 
@@ -105,7 +107,8 @@ class ProcessorRegistry implements IProcessorRegistry {
 	}
 
 	@Override
-	public IProcessor<?, ?> getProcessor(final String path) {
-		return this.repository.get(path);
+	@SuppressWarnings("unchecked")
+	public <T extends IRequest, R extends IResponse> IProcessor<T, R> getProcessor(final String path) {
+		return (IProcessor<T, R>)this.repository.get(path);
 	}
 }

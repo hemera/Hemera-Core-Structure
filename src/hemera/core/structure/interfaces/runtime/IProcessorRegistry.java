@@ -1,6 +1,8 @@
 package hemera.core.structure.interfaces.runtime;
 
 import hemera.core.structure.interfaces.IProcessor;
+import hemera.core.structure.interfaces.IRequest;
+import hemera.core.structure.interfaces.IResponse;
 
 /**
  * <code>IProcessorRegistry</code> defines the interface
@@ -18,9 +20,11 @@ public interface IProcessorRegistry {
 	/**
 	 * Retrieve the processor defined at the specified
 	 * REST access path.
+	 * @param T The <code>IRequest</code> type.
+	 * @param R The <code>IResponse</code> type.
 	 * @param path The <code>String</code> access path.
 	 * @return The <code>IProcessor</code> instance. Or
 	 * <code>null</code> if there is none.
 	 */
-	public IProcessor<?, ?> getProcessor(final String path);
+	public <T extends IRequest, R extends IResponse> IProcessor<T, R> getProcessor(final String path);
 }
