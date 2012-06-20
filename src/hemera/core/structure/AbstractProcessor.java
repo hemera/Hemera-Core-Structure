@@ -4,24 +4,43 @@ import hemera.core.structure.enumn.ERedirect;
 import hemera.core.structure.interfaces.IProcessor;
 import hemera.core.structure.interfaces.IRequest;
 import hemera.core.structure.interfaces.IResponse;
+import hemera.core.utility.logging.FileLogger;
 
 /**
  * <code>AbstractProcessor</code> defines abstraction
  * of a processor unit that is responsible for the
  * logic processing of a particular type of requests.
  * This abstraction only provides the commonly shared
- * activeness implementation.
+ * implementation.
  * <p>
  * <code>AbstractProcessor</code> defines the default
  * activeness value to be <code>true</code>. In other
  * words, the processor instance is by default active.
  * At the same time, the processor defines its default
  * request redirecting behavior to be invoke only.
+ * <p>
+ * This abstraction provides exception handling by
+ * directly log all thrown exceptions with its
+ * <code>FileLogger</code> instance. This allows the
+ * sub-classes to directly throw all exceptions
+ * without implementing exception logging. However,
+ * subclasses should still catch relevant exceptions
+ * to provide proper exception handling in addition
+ * to the provided logging.
+ * <p>
+ * In case of an exception occurs during the request
+ * processing, this processor still returns a value
+ * produced based on the contents of the request and
+ * the exception occurred.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
 public abstract class AbstractProcessor<T extends IRequest, R extends IResponse> implements IProcessor<T, R> {
+	/**
+	 * The <code>FileLogger</code> instance.
+	 */
+	protected final FileLogger logger;
 	/**
 	 * The <code>Boolean</code> activeness flag.
 	 * <p>
@@ -48,12 +67,18 @@ public abstract class AbstractProcessor<T extends IRequest, R extends IResponse>
 	 */
 	protected AbstractProcessor(final boolean active) {
 		this.active = active;
+		this.logger = FileLogger.getLogger(this.getClass());
 	}
 
 	@Override
 	public final R process(final T request) {
-		if(!this.active) return null;
-		return this.doProcess(request);
+		if (!this.active) return null;
+		try {
+			return this.processRequest(request);
+		} catch (final Exception e) {
+			this.logger.exception(e);
+			return this.exceptionResponse(request, e);
+		}
 	}
 	
 	/**
@@ -63,11 +88,29 @@ public abstract class AbstractProcessor<T extends IRequest, R extends IResponse>
 	 * This method must provide necessary thread-safety
 	 * guarantees with high concurrency capabilities to
 	 * allow concurrent invocations.
+	 * <p>
+	 * This method allow exception throwing and parent
+	 * implementation will log the exceptions, although
+	 * implementations should still try to catch
+	 * important exceptions to a provide more detailed
+	 * and relevant handling.
 	 * @param request The <code>T</code> request to be
 	 * processed.
-	 * @return The <code>R</code> processing result.
+	 * @throws Exception If any processing logic failed.
 	 */
-	protected abstract R doProcess(final T request);
+	protected abstract R processRequest(final T request) throws Exception;
+	
+	/**
+	 * Build and return a response value when the
+	 * specified exception has occurred during the
+	 * processing of given request.
+	 * @param request The <code>T</code> request that
+	 * caused the exception.
+	 * @param e The <code>Exception</code> thrown
+	 * during the processing of the request.
+	 * @return The <code>R</code> response value.
+	 */
+	protected abstract R exceptionResponse(final T request, final Exception e);
 
 	@Override
 	public void setActive(final boolean active) {

@@ -12,10 +12,9 @@ import hemera.core.utility.logging.FileLogger;
 
 /**
  * <code>ProcessorRegistry</code> defines an internal
- * writable <code>IProcessorRegister</code>. It provides
- * thread-safety with high concurrency support since
- * the read and write accesses may be performed in
- * different threads.
+ * writable <code>IProcessorRegister</code> providing
+ * thread-safe and highly concurrent read and write
+ * registration operations.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0
