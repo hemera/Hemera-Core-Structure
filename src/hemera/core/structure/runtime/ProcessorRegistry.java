@@ -65,7 +65,7 @@ class ProcessorRegistry implements IProcessorRegistry {
 
 	/**
 	 * Retrieve the valid REST path by removing or
-	 * appending the proper "/" characters.
+	 * appending the proper separator character.
 	 * @param path The <code>String</code> path to
 	 * check.
 	 * @return The valid <code>String</code> path
