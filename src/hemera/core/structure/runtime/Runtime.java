@@ -6,13 +6,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.w3c.dom.Document;
+
 import hemera.core.execution.interfaces.IExecutionService;
 import hemera.core.structure.interfaces.IModule;
 import hemera.core.structure.interfaces.runtime.IProcessorRegistry;
 import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.IRuntimeHandle;
-import hemera.core.utility.config.ConfigImporter;
-import hemera.core.utility.config.Configuration;
+import hemera.core.utility.FileUtils;
 import hemera.core.utility.logging.FileLogger;
 
 /**
@@ -53,10 +54,6 @@ public abstract class Runtime implements IRuntime {
 	 */
 	private final ConcurrentMap<String, IModule> modules;
 	/**
-	 * The <code>ConfigImporter</code> instance.
-	 */
-	private final ConfigImporter importer;
-	/**
 	 * The <code>boolean</code> flag indicating if the
 	 * runtime environment has been activated.
 	 * <p>
@@ -80,7 +77,6 @@ public abstract class Runtime implements IRuntime {
 		// Use default concurrency level since the number of
 		// concurrent updating threads shouldn't be too large.
 		this.modules = new ConcurrentHashMap<String, IModule>();
-		this.importer = new ConfigImporter();
 		this.activated = false;
 	}
 
@@ -200,7 +196,7 @@ public abstract class Runtime implements IRuntime {
 			this.injectServices(module);
 			// Customization.
 			if (configStream != null) {
-				final Configuration config = this.importer.load(configStream);
+				final Document config = FileUtils.instance.readAsDocument(configStream);
 				module.customize(config);
 			}
 			// Initialization.

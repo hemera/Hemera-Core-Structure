@@ -1,8 +1,9 @@
 package hemera.core.structure.interfaces;
 
+import org.w3c.dom.Document;
+
 import hemera.core.execution.interfaces.IExecutionService;
 import hemera.core.structure.interfaces.runtime.IRuntimeHandle;
-import hemera.core.utility.config.Configuration;
 
 /**
  * <code>IModule</code> defines the interface of an
@@ -129,12 +130,12 @@ public interface IModule extends IRESTResource {
 	 * guarantees as it is only meant to be invoked
 	 * once by the module initialization thread. Any
 	 * external invocations should be avoided.
-	 * @param config The <code>Configuration</code>
+	 * @param config The XML <code>Document</code>
 	 * that holds all the loaded configuration data.
 	 * @throws Exception If any customization logic
 	 * failed.
 	 */
-	public void customize(final Configuration config) throws Exception;
+	public void customize(final Document config) throws Exception;
 
 	/**
 	 * Initialize the module unit and all the internal

@@ -1,5 +1,10 @@
 package hemera.core.structure.runtime;
 
+import hemera.core.environment.command.bundle.ham.HAM;
+import hemera.core.environment.command.bundle.ham.HAMModule;
+import hemera.core.environment.enumn.EEnvironment;
+import hemera.core.environment.util.UEnvironment;
+import hemera.core.environment.util.config.Configuration;
 import hemera.core.execution.assisted.AssistedService;
 import hemera.core.execution.exception.FileExceptionHandler;
 import hemera.core.execution.interfaces.IExceptionHandler;
@@ -7,15 +12,10 @@ import hemera.core.execution.interfaces.IExecutionService;
 import hemera.core.execution.interfaces.IServiceListener;
 import hemera.core.execution.listener.FileServiceListener;
 import hemera.core.execution.scalable.ScalableService;
-import hemera.core.structure.enumn.KCAutoDeploy;
-import hemera.core.structure.enumn.KCRuntime;
 import hemera.core.structure.interfaces.IModule;
 import hemera.core.structure.interfaces.runtime.IRuntime;
-import hemera.core.utility.config.ConfigImporter;
-import hemera.core.utility.config.Configuration;
-import hemera.core.utility.config.TimeData;
-import hemera.core.utility.config.xml.XMLParser;
-import hemera.core.utility.config.xml.XMLTag;
+import hemera.core.utility.FileUtils;
+import hemera.core.utility.data.TimeData;
 import hemera.core.utility.logging.CLogging;
 import hemera.core.utility.logging.FileLogger;
 
@@ -27,9 +27,13 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 /**
  * <code>RuntimeLauncher</code> defines the abstraction
@@ -100,19 +104,18 @@ public abstract class RuntimeLauncher implements Daemon {
 	 */
 	public IRuntime launch() throws Exception {
 		// Load configuration.
-		final ConfigImporter importer = new ConfigImporter();
-		final Configuration config = importer.load(new File(this.configPath));
-		// Set environment values.
-		this.setEnvironmentValues(config);
+		final Document document = FileUtils.instance.readAsDocument(new File(this.configPath));
+		final Configuration config = new Configuration(document);
+		// Set logging directory.
+		CLogging.Directory.setValue(config.runtime.loggingDir);
 		// Create runtime.
 		final IExecutionService service = this.newExecutionService(config);
 		final IRuntime runtime = this.newRuntime(service, config);
 		try {
 			// Activate.
 			runtime.activate();
-			// Auto-deploy modules if there is a configuration file.
-			final String autodeployPath = config.getStringValue(KCRuntime.AutoDeployFile);
-			if (autodeployPath != null) this.deployModules(autodeployPath, runtime);
+			// Deploy modules.
+			this.deployModules(runtime);
 			// Return runtime.
 			return runtime;
 		} catch (Exception e) {
@@ -122,17 +125,6 @@ public abstract class RuntimeLauncher implements Daemon {
 			runtime.shutdown();
 			throw e;
 		}
-	}
-
-	/**
-	 * Set the initial values of the runtime environment
-	 * based on the configuration data.
-	 * @param config The loaded configuration data.
-	 */
-	private void setEnvironmentValues(final Configuration config) {
-		// Logging directory.
-		final String directory = config.getStringValue(KCRuntime.LoggingDirectory);
-		CLogging.Directory.setValue(directory);
 	}
 
 	/**
@@ -152,8 +144,8 @@ public abstract class RuntimeLauncher implements Daemon {
 	 */
 	@SuppressWarnings("unchecked")
 	private IServiceListener newServiceListener(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-		final String listenerJarLocation = config.getStringValue(KCRuntime.ExecutionListenerJarLocation);
-		final String listenerClassname = config.getStringValue(KCRuntime.ExecutionListenerClassname);
+		final String listenerJarLocation = config.runtime.execution.listener.jarLocation;
+		final String listenerClassname = config.runtime.execution.listener.classname;
 		if (listenerJarLocation != null && listenerClassname != null) {
 			final File jarFile = new File(listenerJarLocation);
 			final URLClassLoader classloader = new URLClassLoader(new URL[] {jarFile.toURI().toURL()});
@@ -183,16 +175,16 @@ public abstract class RuntimeLauncher implements Daemon {
 		final IExceptionHandler handler = this.newExceptionHandler(config);
 		final IServiceListener listener = this.newServiceListener(config);
 		// Create service based on configuration.
-		final boolean useScalableService = config.getBooleanValue(KCRuntime.UseScalableService);
+		final boolean useScalableService = config.runtime.execution.useScalableService;
 		if (!useScalableService) {
-			final int executorCount = config.getIntegerValue(KCRuntime.AssistedServiceExecutorCount);
-			final int executorBufferSize = config.getIntegerValue(KCRuntime.AssistedServiceExecutorMaxBufferSize);
-			final TimeData idletime = config.getTimeData(KCRuntime.AssistedServiceExecutorIdleTime);
+			final int executorCount = config.runtime.execution.assisted.executorCount;
+			final int executorBufferSize = config.runtime.execution.assisted.maxBufferSize;
+			final TimeData idletime = new TimeData(config.runtime.execution.assisted.idleTime);
 			return new AssistedService(handler, listener, executorCount, executorBufferSize, idletime.value, idletime.unit);
 		} else {
-			final int executorMin = config.getIntegerValue(KCRuntime.ScalableServiceExecutorMinimum);
-			final int executorMax = config.getIntegerValue(KCRuntime.ScalableServiceExecutorMaximum);
-			final TimeData timeout = config.getTimeData(KCRuntime.ScalableServiceExecutorTimeout);
+			final int executorMin = config.runtime.execution.scalable.minExecutor;
+			final int executorMax = config.runtime.execution.scalable.maxExecutor;
+			final TimeData timeout = new TimeData(config.runtime.execution.scalable.timeout);
 			return new ScalableService(handler, listener, executorMin, executorMax, timeout.value, timeout.unit);
 		}
 	}
@@ -214,8 +206,8 @@ public abstract class RuntimeLauncher implements Daemon {
 	 */
 	@SuppressWarnings("unchecked")
 	private IExceptionHandler newExceptionHandler(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-		final String exceptionJarLocation = config.getStringValue(KCRuntime.ExceptionHandlerJarLocation);
-		final String exceptionClassname = config.getStringValue(KCRuntime.ExceptionHandlerClassname);
+		final String exceptionJarLocation = config.runtime.execution.handler.jarLocation;
+		final String exceptionClassname = config.runtime.execution.handler.classname;
 		if (exceptionJarLocation != null && exceptionClassname != null) {
 			final File jarFile = new File(exceptionJarLocation);
 			final URLClassLoader classloader = new URLClassLoader(new URL[] {jarFile.toURI().toURL()});
@@ -236,16 +228,22 @@ public abstract class RuntimeLauncher implements Daemon {
 	protected abstract IRuntime newRuntime(final IExecutionService service, final Configuration config);
 
 	/**
-	 * Deploy any modules that are defined in the auto-
-	 * deployment configuration file.
-	 * @param path The <code>String</code> file path to
-	 * the auto-deployment configuration file.
+	 * Deploy all of the modules that are defined in the
+	 * runtime environment's applications directory.
 	 * @param runtime The <code>IRuntime</code> instance.
 	 * @throws Exception If any processing failed.
 	 */
-	private void deployModules(final String path, final IRuntime runtime) throws Exception {
+	private void deployModules(final IRuntime runtime) throws Exception {
+		final String appsDir = UEnvironment.instance.getInstalledAppsDir();
+		// Scan all HAM files.
+		final List<File> hamFiles = FileUtils.instance.getFiles(appsDir, EEnvironment.HAMExtension.value);
 		// Parse out module configurations.
-		final List<ModuleConfig> modules = this.parseModuleConfigs(path);
+		final List<ModuleConfig> modules = new ArrayList<ModuleConfig>();
+		final int hamSize = hamFiles.size();
+		for (int i = 0; i < hamSize; i++) {
+			final File hamFile = hamFiles.get(i);
+			modules.addAll(this.parseModuleConfigs(hamFile));
+		}
 		// Deploy all modules.
 		final int size = modules.size();
 		for (int i = 0; i < size; i++) {
@@ -255,32 +253,31 @@ public abstract class RuntimeLauncher implements Daemon {
 	}
 
 	/**
-	 * Parse the auto-deploy configuration file and
-	 * retrieve all the module configurations.
-	 * @param path The <code>String</code> file path to
-	 * the auto-deployment configuration file.
+	 * Parse the HAM file and retrieve the application
+	 * modules configuration.
+	 * @param hamFile The HAM <code>File</code>.
 	 * @return The <code>List</code> of all the auto-
 	 * deploy <code>ModuleConfig</code>.
 	 * @throws IOException If file parsing failed.
+	 * @throws ParserConfigurationException If XML
+	 * parsing failed.
+	 * @throws SAXException If XML parsing failed. 
 	 */
-	private List<ModuleConfig> parseModuleConfigs(final String path) throws IOException {
-		final List<ModuleConfig> list = new ArrayList<ModuleConfig>();
-		final XMLParser parser = new XMLParser();
-		parser.process(new File(path));
-		final XMLTag root = parser.getRoot();
-		if (root.getName().equals(KCAutoDeploy.RootTag.value)) {
-			// Parse all children tags as module tags.
-			final Iterable<XMLTag> moduleTags = root.getChildren();
-			for (final XMLTag moduleTag : moduleTags) {
-				if (moduleTag.getName().equals(KCAutoDeploy.ModuleTag.value)) {
-					final String jarlocation = moduleTag.getValue(KCAutoDeploy.JarLocation.value);
-					final String classname = moduleTag.getValue(KCAutoDeploy.Classname.value);
-					final boolean jarlocal = Boolean.valueOf(moduleTag.getValue(KCAutoDeploy.JarLocal.value));
-					final String configPath = moduleTag.getValue(KCAutoDeploy.ConfigPath.value);
-					final ModuleConfig module = new ModuleConfig(jarlocation, classname, jarlocal, configPath);
-					list.add(module);
-				}
-			}
+	private List<ModuleConfig> parseModuleConfigs(final File hamFile) throws IOException, SAXException, ParserConfigurationException {
+		// Parse HAM file.
+		final Document document = FileUtils.instance.readAsDocument(hamFile);
+		final HAM ham = new HAM(document);
+		// Parse all modules.
+		final String appDir = UEnvironment.instance.getApplicationDir(ham.applicationName);
+		final int size = ham.modules.size();
+		final List<ModuleConfig> list = new ArrayList<ModuleConfig>(size);
+		for (int i = 0; i < size; i++) {
+			final HAMModule hamModule = ham.modules.get(i);
+			final StringBuilder jarPath = new StringBuilder();
+			jarPath.append(appDir).append(hamModule.classname).append(File.separator);
+			jarPath.append(hamModule.classname).append(".jar");
+			final ModuleConfig module = new ModuleConfig(jarPath.toString(), hamModule.classname, hamModule.configFile);
+			list.add(module);
 		}
 		return list;
 	}
@@ -295,12 +292,12 @@ public abstract class RuntimeLauncher implements Daemon {
 	@SuppressWarnings("unchecked")
 	private void deployModule(final ModuleConfig config, final IRuntime runtime) throws Exception {
 		// Load and instantiate module.
-		final URL jarurl = config.local ? new File(config.jarLocation).toURI().toURL() : new URL(config.jarLocation);
+		final URL jarurl = new File(config.jarLocation).toURI().toURL();
 		final URLClassLoader loader = new URLClassLoader(new URL[] {jarurl});
 		final Class<? extends IModule> moduleclass = (Class<? extends IModule>)loader.loadClass(config.classname);
 		// Assign based on configuration.
 		if (config.configLocation != null) {
-			final URL configURL = config.local ? new File(config.configLocation).toURI().toURL() : new URL(config.configLocation);
+			final URL configURL = new File(config.configLocation).toURI().toURL();
 			final InputStream configStream = configURL.openStream();
 			runtime.add(moduleclass, configStream);
 		} else {
@@ -327,12 +324,6 @@ public abstract class RuntimeLauncher implements Daemon {
 		 */
 		private final String classname;
 		/**
-		 * The <code>boolean</code> value indicates if the
-		 * JAR file is on the local disk of the machine where
-		 * the server node runs.
-		 */
-		private final boolean local;
-		/**
 		 * The <code>String</code> module configuration file
 		 * location.
 		 */
@@ -345,16 +336,12 @@ public abstract class RuntimeLauncher implements Daemon {
 		 * @param classname The <code>String</code>
 		 * fully qualified class name of the module
 		 * implementation.
-		 * @param local The <code>boolean</code> value
-		 * indicates if the JAR file is on the local
-		 * disk of the machine where the server node runs.
 		 * @param configLocation The <code>String</code>
 		 * module configuration file location.
 		 */
-		private ModuleConfig(final String jarLocation, final String classname, final boolean local, final String configLocation) {
+		private ModuleConfig(final String jarLocation, final String classname, final String configLocation) {
 			this.jarLocation = jarLocation;
 			this.classname = classname;
-			this.local = local;
 			this.configLocation = configLocation;
 		}
 	}

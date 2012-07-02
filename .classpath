@@ -6,5 +6,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/Hemera-Core-Execution"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Hemera-Core-Utility"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Hemera-Core-Structure"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Hemera-Core-Environment"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
