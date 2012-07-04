@@ -1,11 +1,17 @@
-# Hemera Engine - Core Structure
+# Hemera
+Created by **Yi Wang (Neakor)**
 
-Created by **Yi Wang (hemera)**
+**Please note that this is one of the building blocks of the Hemera
+Application Platform. Please refer to [Hemera-Release](https://github.com/hemera/Hemera-Release)
+for the stable releases and [documentation](https://github.com/hemera/Hemera-Release/wiki).**
 
-**Hemera Engine - Core Structure** TODO
+# Hemera - Core Structure
 
-# Documentation
-TODO
+**Hemera - Core Structure** provides the fundamental architecture layer
+of the runtime environment. It defines the various extension points for
+applications to implement in order to be hosted by the runtime. At the
+same time, these extension points define the architectural guidance and
+enforcements are aimed to improve software scalability and maintainability.
 
 # License
 
