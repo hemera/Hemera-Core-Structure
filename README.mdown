@@ -11,7 +11,7 @@ for the stable releases and [documentation](https://github.com/hemera/Hemera-Rel
 of the runtime environment. It defines the various extension points for
 applications to implement in order to be hosted by the runtime. At the
 same time, these extension points define the architectural guidance and
-enforcements are aimed to improve software scalability and maintainability.
+enforcements aimed to improve software scalability and maintainability.
 
 # License
 
