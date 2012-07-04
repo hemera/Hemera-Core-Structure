@@ -15,7 +15,7 @@ enforcements aimed to improve software scalability and maintainability.
 
 # License
 
-**Hemera Engine - Core Structure** is available under the MIT license:
+**Hemera - Core Structure** is available under the MIT license:
 
 *Copyright (c) 2012 Yi Wang (hemera)*
 
