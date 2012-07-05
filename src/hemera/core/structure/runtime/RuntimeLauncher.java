@@ -106,8 +106,11 @@ public abstract class RuntimeLauncher implements Daemon {
 		// Load configuration.
 		final Document document = FileUtils.instance.readAsDocument(new File(this.configPath));
 		final Configuration config = new Configuration(document);
-		// Set logging directory.
-		CLogging.Directory.setValue(config.runtime.loggingDir);
+		// Set logging configuration.
+		CLogging.Enabled.setValue(config.runtime.logging.enabled);
+		CLogging.Directory.setValue(config.runtime.logging.directory);
+		CLogging.FileSize.setValue(config.runtime.logging.fileSize);
+		CLogging.FileCount.setValue(config.runtime.logging.fileCount);
 		// Create runtime.
 		final IExecutionService service = this.newExecutionService(config);
 		final IRuntime runtime = this.newRuntime(service, config);
