@@ -16,6 +16,8 @@ public interface IResponse {
 	/**
 	 * Retrieve the response in JSON format.
 	 * @return The <code>JSONObject</code> response.
+	 * @throws Exception If converting response to
+	 * JSON format failed.
 	 */
-	public JSONObject toJSON();
+	public JSONObject toJSON() throws Exception;
 }
