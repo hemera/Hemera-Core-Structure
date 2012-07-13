@@ -1,6 +1,8 @@
 package hemera.core.structure;
 
+import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import hemera.core.execution.interfaces.IExecutionService;
@@ -52,6 +54,12 @@ public abstract class AbstractModule implements IModule {
 	 * module unit but before the initialization stage.
 	 */
 	protected IRuntimeHandle runtimeHandle;
+	/**
+	 * The <code>List</code> of all the module resource
+	 * <code>File</code>. <code>null</code> if the module
+	 * does not have any resource files.
+	 */
+	protected List<File> resources;
 	
 	/**
 	 * Constructor of <code>AbstractModule</code>.
@@ -69,6 +77,11 @@ public abstract class AbstractModule implements IModule {
 	@Override
 	public final void inject(final IRuntimeHandle handle) {
 		this.runtimeHandle = handle;
+	}
+	
+	@Override
+	public final void inject(final List<File> resources) {
+		this.resources = resources;
 	}
 	
 	@Override

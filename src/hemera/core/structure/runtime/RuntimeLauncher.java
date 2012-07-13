@@ -279,7 +279,7 @@ public abstract class RuntimeLauncher implements Daemon {
 			final StringBuilder jarPath = new StringBuilder();
 			jarPath.append(appDir).append(hamModule.classname).append(File.separator);
 			jarPath.append(hamModule.classname).append(".jar");
-			final ModuleConfig module = new ModuleConfig(jarPath.toString(), hamModule.classname, hamModule.configFile);
+			final ModuleConfig module = new ModuleConfig(jarPath.toString(), hamModule.classname, hamModule.configFile, hamModule.resourcesDir);
 			list.add(module);
 		}
 		return list;
@@ -299,13 +299,12 @@ public abstract class RuntimeLauncher implements Daemon {
 		final URLClassLoader loader = new URLClassLoader(new URL[] {jarurl});
 		final Class<? extends IModule> moduleclass = (Class<? extends IModule>)loader.loadClass(config.classname);
 		// Assign based on configuration.
+		InputStream configStream = null;
 		if (config.configLocation != null) {
 			final URL configURL = new File(config.configLocation).toURI().toURL();
-			final InputStream configStream = configURL.openStream();
-			runtime.add(moduleclass, configStream);
-		} else {
-			runtime.add(moduleclass);
+			configStream = configURL.openStream();
 		}
+		runtime.add(moduleclass, configStream, config.resourcesDir);
 	}
 
 	/**
@@ -327,10 +326,15 @@ public abstract class RuntimeLauncher implements Daemon {
 		 */
 		private final String classname;
 		/**
-		 * The <code>String</code> module configuration file
-		 * location.
+		 * The <code>String</code> optional module
+		 * configuration file location.
 		 */
 		private final String configLocation;
+		/**
+		 * The <code>String</code> optional module
+		 * resources directory.
+		 */
+		private final String resourcesDir;
 
 		/**
 		 * Constructor of <code>ModuleConfig</code>.
@@ -341,11 +345,14 @@ public abstract class RuntimeLauncher implements Daemon {
 		 * implementation.
 		 * @param configLocation The <code>String</code>
 		 * module configuration file location.
+		 * @param resourcesDir The <code>String</code>
+		 * optional module resources directory.
 		 */
-		private ModuleConfig(final String jarLocation, final String classname, final String configLocation) {
+		private ModuleConfig(final String jarLocation, final String classname, final String configLocation, final String resourcesDir) {
 			this.jarLocation = jarLocation;
 			this.classname = classname;
 			this.configLocation = configLocation;
+			this.resourcesDir = resourcesDir;
 		}
 	}
 }

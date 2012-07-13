@@ -1,5 +1,8 @@
 package hemera.core.structure.interfaces;
 
+import java.io.File;
+import java.util.List;
+
 import org.w3c.dom.Document;
 
 import hemera.core.execution.interfaces.IExecutionService;
@@ -39,7 +42,7 @@ import hemera.core.structure.interfaces.runtime.IRuntimeHandle;
  * thus allowing the module instance to utilize these
  * provided functionalities at runtime. All the injection
  * methods are guaranteed to be invoked only once right
- * before module's initialization stage. The method
+ * before module's customization stage. The method
  * implementations should typically just store injected
  * instance into a class field for runtime usage.
  * <p>
@@ -113,6 +116,19 @@ public interface IModule extends IRESTResource {
 	 * instance.
 	 */
 	public void inject(final IRuntimeHandle handle);
+	
+	/**
+	 * Inject the module resource files into this module.
+	 * <p>
+	 * This method is guaranteed to be invoked only once
+	 * right before the module's customization stage. The
+	 * implementation should typically just store injected
+	 * instance into a class data field for runtime usage.
+	 * @param resources The <code>List</code> of all the
+	 * module resource <code>File</code>. <code>null</code>
+	 * if the module does not have any resource files.
+	 */
+	public void inject(final List<File> resources);
 	
 	/**
 	 * Customize the initial values of various data

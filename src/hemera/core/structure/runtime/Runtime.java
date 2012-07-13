@@ -1,6 +1,8 @@
 package hemera.core.structure.runtime;
 
+import java.io.File;
 import java.io.InputStream;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
@@ -181,19 +183,14 @@ public abstract class Runtime implements IRuntime {
 	protected abstract void shutdownComponents() throws Exception;
 
 	@Override
-	public final boolean add(final Class<? extends IModule> moduleclass) throws Exception {
-		return this.add(moduleclass, null);
-	}
-
-	@Override
-	public final boolean add(final Class<? extends IModule> moduleclass, final InputStream configStream) throws Exception {
+	public final boolean add(final Class<? extends IModule> moduleclass, final InputStream configStream, final String resourcesDir) throws Exception {
 		try {
 			this.statusCheck();
 			// Cache module instance and check for duplicate.
 			final IModule module = this.addCache(moduleclass);
 			if (module == null) return false;
 			//  Injection services.
-			this.injectServices(module);
+			this.injectServices(module, resourcesDir);
 			// Customization.
 			if (configStream != null) {
 				final Document config = FileUtils.instance.readAsDocument(configStream);
@@ -260,10 +257,18 @@ public abstract class Runtime implements IRuntime {
 	 * of additional runtime type specific services.
 	 * @param module The <code>IModule</code> to be
 	 * injected with services.
+	 * @param resourcesDir The optional resources
+	 * directory of the given module. <code>null</code>
+	 * if the module does not have any resources.
 	 */
-	protected void injectServices(final IModule module) {
+	protected void injectServices(final IModule module, final String resourcesDir) {
 		module.inject(this.service);
 		module.inject(this.handle);
+		if (resourcesDir == null) module.inject((List<File>)null);
+		else {
+			final List<File> resources = FileUtils.instance.getFiles(resourcesDir);
+			module.inject(resources);
+		}
 	}
 
 	@Override

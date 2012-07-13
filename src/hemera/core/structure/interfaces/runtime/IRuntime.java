@@ -91,26 +91,6 @@ public interface IRuntime {
 	/**
 	 * Add an instance of the given module class to the
 	 * runtime environment with its defined REST path as
-	 * its unique identifier.
-	 * <p>
-	 * Adding modules using this method will skip the
-	 * module's customization stage.
-	 * <p>
-	 * This method provides the necessary thread-safety
-	 * guarantees with high concurrency capabilities.
-	 * @param moduleclass The <code>Class</code> of the
-	 * module to be added and hosted by the runtime.
-	 * @return <code>true</code> if module instance is
-	 * successfully added and hosted. <code>false</code>
-	 * if there already exists a module defined at the
-	 * REST path.
-	 * @throws Exception If any procedure failed.
-	 */
-	public boolean add(final Class<? extends IModule> moduleclass) throws Exception;
-	
-	/**
-	 * Add an instance of the given module class to the
-	 * runtime environment with its defined REST path as
 	 * its unique identifier, and the specified
 	 * configuration stream for module customization.
 	 * <p>
@@ -122,13 +102,16 @@ public interface IRuntime {
 	 * <code>InputStream</code> used to customize the
 	 * given module. <code>null</code> if the module
 	 * does not need to be customized.
+	 * @param resourcesDir The optional resources
+	 * directory of the given module. <code>null</code>
+	 * if the module does not have any resources.
 	 * @return <code>true</code> if module instance is
 	 * successfully added and hosted. <code>false</code>
 	 * if there already exists a module defined at the
 	 * REST path.
 	 * @throws Exception If any procedure failed.
 	 */
-	public boolean add(final Class<? extends IModule> moduleclass, final InputStream configStream) throws Exception;
+	public boolean add(final Class<? extends IModule> moduleclass, final InputStream configStream, final String resourcesDir) throws Exception;
 	
 	/**
 	 * Remove the module instance with with given REST
