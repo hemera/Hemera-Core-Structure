@@ -1,4 +1,4 @@
-package hemera.core.structure.interfaces.runtime;
+package hemera.core.structure.interfaces.runtime.util;
 
 /**
  * <code>IRuntimeHandle</code> defines the interface

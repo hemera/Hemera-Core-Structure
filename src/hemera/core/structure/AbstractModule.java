@@ -8,7 +8,7 @@ import java.util.Map;
 import hemera.core.execution.interfaces.IExecutionService;
 import hemera.core.structure.interfaces.IModule;
 import hemera.core.structure.interfaces.IProcessor;
-import hemera.core.structure.interfaces.runtime.IRuntimeHandle;
+import hemera.core.structure.interfaces.runtime.util.IRuntimeHandle;
 import hemera.core.utility.logging.FileLogger;
 
 /**

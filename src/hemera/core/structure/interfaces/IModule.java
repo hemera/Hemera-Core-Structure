@@ -6,7 +6,7 @@ import java.util.List;
 import org.w3c.dom.Document;
 
 import hemera.core.execution.interfaces.IExecutionService;
-import hemera.core.structure.interfaces.runtime.IRuntimeHandle;
+import hemera.core.structure.interfaces.runtime.util.IRuntimeHandle;
 
 /**
  * <code>IModule</code> defines the interface of an

@@ -1,10 +1,10 @@
-package hemera.core.structure.runtime;
+package hemera.core.structure.runtime.util;
 
-import hemera.core.environment.command.bundle.ham.HAM;
-import hemera.core.environment.command.bundle.ham.HAMModule;
+import hemera.core.environment.config.Configuration;
 import hemera.core.environment.enumn.EEnvironment;
+import hemera.core.environment.ham.HAM;
+import hemera.core.environment.ham.HAMModule;
 import hemera.core.environment.util.UEnvironment;
-import hemera.core.environment.util.config.Configuration;
 import hemera.core.execution.assisted.AssistedService;
 import hemera.core.execution.exception.FileExceptionHandler;
 import hemera.core.execution.interfaces.IExceptionHandler;
@@ -14,6 +14,7 @@ import hemera.core.execution.listener.FileServiceListener;
 import hemera.core.execution.scalable.ScalableService;
 import hemera.core.structure.interfaces.IModule;
 import hemera.core.structure.interfaces.runtime.IRuntime;
+import hemera.core.structure.interfaces.runtime.util.IRuntimeLauncher;
 import hemera.core.utility.FileUtils;
 import hemera.core.utility.data.TimeData;
 import hemera.core.utility.logging.CLogging;
@@ -29,7 +30,6 @@ import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
 import org.w3c.dom.Document;
@@ -49,7 +49,7 @@ import org.xml.sax.SAXException;
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
-public abstract class RuntimeLauncher implements Daemon {
+public abstract class RuntimeLauncher implements IRuntimeLauncher {
 	/**
 	 * The <code>String</code> path to runtime environment
 	 * configuration file.
@@ -59,21 +59,17 @@ public abstract class RuntimeLauncher implements Daemon {
 	 * The <code>IRuntime</code> instance.
 	 */
 	private IRuntime runtime;
+	/**
+	 * The <code>boolean</code> scan for applications
+	 * flag. The default value is <code>true</code>.
+	 */
+	private boolean scanApps;
 
 	/**
 	 * Constructor of <code>RuntimeLauncher</code>.
 	 */
 	protected RuntimeLauncher() {
-		super();
-	}
-
-	/**
-	 * Constructor of <code>RuntimeLauncher</code>.
-	 * @param configPath The <code>String</code> path to
-	 * runtime environment configuration file.
-	 */
-	protected RuntimeLauncher(final String configPath) {
-		this.configPath = configPath;
+		this.scanApps = true;
 	}
 
 	@Override
@@ -117,8 +113,8 @@ public abstract class RuntimeLauncher implements Daemon {
 		try {
 			// Activate.
 			runtime.activate();
-			// Deploy modules.
-			this.deployModules(runtime);
+			// Scan and deploy modules.
+			if (this.scanApps) this.scanAndDeployModules(runtime);
 			// Return runtime.
 			return runtime;
 		} catch (Exception e) {
@@ -231,55 +227,55 @@ public abstract class RuntimeLauncher implements Daemon {
 	protected abstract IRuntime newRuntime(final IExecutionService service, final Configuration config);
 
 	/**
-	 * Deploy all of the modules that are defined in the
-	 * runtime environment's applications directory.
+	 * Scan the applications directory and deploy all of
+	 * the modules.
 	 * @param runtime The <code>IRuntime</code> instance.
 	 * @throws Exception If any processing failed.
 	 */
-	private void deployModules(final IRuntime runtime) throws Exception {
+	private void scanAndDeployModules(final IRuntime runtime) throws Exception {
 		final String appsDir = UEnvironment.instance.getInstalledAppsDir();
 		// Scan all HAM files.
 		final List<File> hamFiles = FileUtils.instance.getFiles(appsDir, EEnvironment.HAMExtension.value);
 		// Parse out module configurations.
-		final List<ModuleConfig> modules = new ArrayList<ModuleConfig>();
+		final List<JarModuleNode> modules = new ArrayList<JarModuleNode>();
 		final int hamSize = hamFiles.size();
 		for (int i = 0; i < hamSize; i++) {
 			final File hamFile = hamFiles.get(i);
-			modules.addAll(this.parseModuleConfigs(hamFile));
+			modules.addAll(this.parseModuleNodes(hamFile));
 		}
 		// Deploy all modules.
 		final int size = modules.size();
 		for (int i = 0; i < size; i++) {
-			final ModuleConfig module = modules.get(i);
+			final JarModuleNode module = modules.get(i);
 			this.deployModule(module, runtime);
 		}
 	}
 
 	/**
 	 * Parse the HAM file and retrieve the application
-	 * modules configuration.
+	 * module nodes.
 	 * @param hamFile The HAM <code>File</code>.
 	 * @return The <code>List</code> of all the auto-
-	 * deploy <code>ModuleConfig</code>.
+	 * deploy <code>JarModuleNode</code>.
 	 * @throws IOException If file parsing failed.
 	 * @throws ParserConfigurationException If XML
 	 * parsing failed.
 	 * @throws SAXException If XML parsing failed. 
 	 */
-	private List<ModuleConfig> parseModuleConfigs(final File hamFile) throws IOException, SAXException, ParserConfigurationException {
+	private List<JarModuleNode> parseModuleNodes(final File hamFile) throws IOException, SAXException, ParserConfigurationException {
 		// Parse HAM file.
 		final Document document = FileUtils.instance.readAsDocument(hamFile);
 		final HAM ham = new HAM(document);
 		// Parse all modules.
 		final String appDir = UEnvironment.instance.getApplicationDir(ham.applicationName);
 		final int size = ham.modules.size();
-		final List<ModuleConfig> list = new ArrayList<ModuleConfig>(size);
+		final List<JarModuleNode> list = new ArrayList<JarModuleNode>(size);
 		for (int i = 0; i < size; i++) {
 			final HAMModule hamModule = ham.modules.get(i);
 			final StringBuilder jarPath = new StringBuilder();
 			jarPath.append(appDir).append(hamModule.classname).append(File.separator);
 			jarPath.append(hamModule.classname).append(".jar");
-			final ModuleConfig module = new ModuleConfig(jarPath.toString(), hamModule.classname, hamModule.configFile, hamModule.resourcesDir);
+			final JarModuleNode module = new JarModuleNode(jarPath.toString(), hamModule.classname, hamModule.configFile, hamModule.resourcesDir);
 			list.add(module);
 		}
 		return list;
@@ -287,72 +283,33 @@ public abstract class RuntimeLauncher implements Daemon {
 
 	/**
 	 * Deploy the module defined by the given module
-	 * configuration.
-	 * @param config The <code>ModuleConfig</code>.
+	 * node.
+	 * @param module The <code>JarModuleNode</code>.
 	 * @param runtime The <code>IRuntime</code> instance.
 	 * @throws Exception If any processing failed.
 	 */
 	@SuppressWarnings("unchecked")
-	private void deployModule(final ModuleConfig config, final IRuntime runtime) throws Exception {
+	private void deployModule(final JarModuleNode module, final IRuntime runtime) throws Exception {
 		// Load and instantiate module.
-		final URL jarurl = new File(config.jarLocation).toURI().toURL();
+		final URL jarurl = new File(module.jarLocation).toURI().toURL();
 		final URLClassLoader loader = new URLClassLoader(new URL[] {jarurl});
-		final Class<? extends IModule> moduleclass = (Class<? extends IModule>)loader.loadClass(config.classname);
-		// Assign based on configuration.
+		final Class<? extends IModule> moduleclass = (Class<? extends IModule>)loader.loadClass(module.classname);
+		// Add module.
 		InputStream configStream = null;
-		if (config.configLocation != null) {
-			final URL configURL = new File(config.configLocation).toURI().toURL();
+		if (module.configLocation != null) {
+			final URL configURL = new File(module.configLocation).toURI().toURL();
 			configStream = configURL.openStream();
 		}
-		runtime.add(moduleclass, configStream, config.resourcesDir);
+		runtime.add(moduleclass, configStream, module.resourcesDir);
 	}
-
-	/**
-	 * <code>ModuleConfig</code> defines the immutable
-	 * data structure representing a configuration of
-	 * a module instance.
-	 *
-	 * @author Yi Wang (Neakor)
-	 * @version 1.0.0
-	 */
-	private class ModuleConfig {
-		/**
-		 * The <code>String</code> module JAR file location.
-		 */
-		private final String jarLocation;
-		/**
-		 * The <code>String</code> fully qualified class
-		 * name of the module implementation.
-		 */
-		private final String classname;
-		/**
-		 * The <code>String</code> optional module
-		 * configuration file location.
-		 */
-		private final String configLocation;
-		/**
-		 * The <code>String</code> optional module
-		 * resources directory.
-		 */
-		private final String resourcesDir;
-
-		/**
-		 * Constructor of <code>ModuleConfig</code>.
-		 * @param jarLocation The <code>String</code>
-		 * module JAR file location.
-		 * @param classname The <code>String</code>
-		 * fully qualified class name of the module
-		 * implementation.
-		 * @param configLocation The <code>String</code>
-		 * module configuration file location.
-		 * @param resourcesDir The <code>String</code>
-		 * optional module resources directory.
-		 */
-		private ModuleConfig(final String jarLocation, final String classname, final String configLocation, final String resourcesDir) {
-			this.jarLocation = jarLocation;
-			this.classname = classname;
-			this.configLocation = configLocation;
-			this.resourcesDir = resourcesDir;
-		}
+	
+	@Override
+	public void setScanApps(final boolean scan) {
+		this.scanApps = scan;
+	}
+	
+	@Override
+	public IRuntime getRuntime() {
+		return this.runtime;
 	}
 }
