@@ -80,7 +80,7 @@ class ProcessorRegistry implements IProcessorRegistry {
 		final int length = path.length();
 		for (int i = 0; i < length; i++) {
 			final char c = path.charAt(i);
-			if (Character.isLetterOrDigit(c)) {
+			if (Character.isLetterOrDigit(c) || c == '/') {
 				builder.append(c);
 			}
 		}
