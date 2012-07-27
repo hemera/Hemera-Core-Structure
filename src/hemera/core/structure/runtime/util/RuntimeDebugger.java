@@ -1,17 +1,24 @@
 package hemera.core.structure.runtime.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonController;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import hemera.core.environment.config.Configuration;
 import hemera.core.environment.enumn.EEnvironment;
+import hemera.core.environment.hbm.HBM;
+import hemera.core.environment.hbm.HBMModule;
 import hemera.core.environment.util.UEnvironment;
 import hemera.core.structure.interfaces.IModule;
 import hemera.core.structure.interfaces.runtime.IRuntime;
@@ -116,7 +123,28 @@ public class RuntimeDebugger {
 	}
 
 	/**
-	 * Add the given module node for deployment.
+	 * Add all the modules defined in the HBM file at
+	 * given path for debugging.
+	 * @param hbmPath The <code>String</code> path to
+	 * the HBM file.
+	 * @throws IOException If reading file failed.
+	 * @throws SAXException If parsing file failed.
+	 * @throws ParserConfigurationException If
+	 * parsing file failed.
+	 */
+	public void addHBM(final String hbmPath) throws IOException, SAXException, ParserConfigurationException {
+		final Document document = FileUtils.instance.readAsDocument(new File(hbmPath));
+		final HBM hbm = new HBM(document);
+		final int size = hbm.modules.size();
+		for (int i = 0; i < size; i++) {
+			final HBMModule module = hbm.modules.get(i);
+			final ModuleNode node = new ModuleNode(module.classname, module.configFile, module.resourcesDir);
+			this.addModule(node);
+		}
+	}
+
+	/**
+	 * Add the given module node for debugging.
 	 * @param module The <code>ModuleNode</code> to
 	 * add.
 	 */
