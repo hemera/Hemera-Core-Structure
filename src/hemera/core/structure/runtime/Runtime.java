@@ -183,14 +183,16 @@ public abstract class Runtime implements IRuntime {
 	protected abstract void shutdownComponents() throws Exception;
 
 	@Override
-	public final boolean add(final Class<? extends IModule> moduleclass, final InputStream configStream, final String resourcesDir) throws Exception {
+	public final boolean add(final Class<? extends IModule> moduleclass, final InputStream configStream, final List<File> resources) throws Exception {
 		try {
 			this.statusCheck();
 			// Cache module instance and check for duplicate.
 			final IModule module = this.addCache(moduleclass);
 			if (module == null) return false;
 			//  Injection services.
-			this.injectServices(module, resourcesDir);
+			this.injectServices(module);
+			// Inject resources.
+			module.inject(resources);
 			// Customization.
 			if (configStream != null) {
 				final Document config = FileUtils.instance.readAsDocument(configStream);
@@ -257,18 +259,10 @@ public abstract class Runtime implements IRuntime {
 	 * of additional runtime type specific services.
 	 * @param module The <code>IModule</code> to be
 	 * injected with services.
-	 * @param resourcesDir The optional resources
-	 * directory of the given module. <code>null</code>
-	 * if the module does not have any resources.
 	 */
-	protected void injectServices(final IModule module, final String resourcesDir) {
+	protected void injectServices(final IModule module) {
 		module.inject(this.service);
 		module.inject(this.handle);
-		if (resourcesDir == null) module.inject((List<File>)null);
-		else {
-			final List<File> resources = FileUtils.instance.getFiles(resourcesDir);
-			module.inject(resources);
-		}
 	}
 
 	@Override

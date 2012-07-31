@@ -25,11 +25,13 @@ public class JarModuleNode extends ModuleNode {
 	 * module configuration file location. This is
 	 * an optional value and can be <code>null</code>.
 	 * @param resourcesDir The <code>String</code>
-	 * optional module resources directory. This is
-	 * an optional value and can be <code>null</code>.
+	 * optional module resources directory.
+	 * @param sharedResourcesDir The optional shared
+	 * resources directory <code>String</code>.
 	 */
-	public JarModuleNode(final String jarLocation, final String classname, final String configLocation, final String resourcesDir) {
-		super(classname, configLocation, resourcesDir);
+	public JarModuleNode(final String jarLocation, final String classname, final String configLocation,
+			final String resourcesDir, final String sharedResourcesDir) {
+		super(classname, configLocation, resourcesDir, sharedResourcesDir);
 		this.jarLocation = jarLocation;
 	}
 }

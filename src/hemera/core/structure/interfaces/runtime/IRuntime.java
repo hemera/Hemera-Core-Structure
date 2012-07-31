@@ -1,6 +1,8 @@
 package hemera.core.structure.interfaces.runtime;
 
+import java.io.File;
 import java.io.InputStream;
+import java.util.List;
 
 import hemera.core.structure.interfaces.IModule;
 
@@ -102,16 +104,16 @@ public interface IRuntime {
 	 * <code>InputStream</code> used to customize the
 	 * given module. <code>null</code> if the module
 	 * does not need to be customized.
-	 * @param resourcesDir The optional resources
-	 * directory of the given module. <code>null</code>
-	 * if the module does not have any resources.
+	 * @param resources The optional <code>List</code>
+	 * of module resources <code>File</code>. If module
+	 * does not have any resources, <code>null</code>.
 	 * @return <code>true</code> if module instance is
 	 * successfully added and hosted. <code>false</code>
 	 * if there already exists a module defined at the
 	 * REST path.
 	 * @throws Exception If any procedure failed.
 	 */
-	public boolean add(final Class<? extends IModule> moduleclass, final InputStream configStream, final String resourcesDir) throws Exception;
+	public boolean add(final Class<? extends IModule> moduleclass, final InputStream configStream, final List<File> resources) throws Exception;
 	
 	/**
 	 * Remove the module instance with with given REST

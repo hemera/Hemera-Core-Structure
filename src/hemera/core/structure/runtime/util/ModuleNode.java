@@ -23,6 +23,11 @@ public class ModuleNode {
 	 * resources directory.
 	 */
 	public final String resourcesDir;
+	/**
+	 * The <code>String</code> optional shared
+	 * resources directory.
+	 */
+	public final String sharedResourcesDir;
 
 	/**
 	 * Constructor of <code>ModuleNode</code>.
@@ -33,12 +38,15 @@ public class ModuleNode {
 	 * module configuration file location. This is
 	 * an optional value and can be <code>null</code>.
 	 * @param resourcesDir The <code>String</code>
-	 * optional module resources directory. This is
-	 * an optional value and can be <code>null</code>.
+	 * optional module resources directory.
+	 * @param sharedResourcesDir The optional shared
+	 * resources directory <code>String</code>.
 	 */
-	public ModuleNode(final String classname, final String configLocation, final String resourcesDir) {
+	public ModuleNode(final String classname, final String configLocation, final String resourcesDir,
+			final String sharedResourcesDir) {
 		this.classname = classname;
 		this.configLocation = configLocation;
 		this.resourcesDir = resourcesDir;
+		this.sharedResourcesDir = sharedResourcesDir;
 	}
 }

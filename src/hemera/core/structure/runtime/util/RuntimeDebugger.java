@@ -118,7 +118,14 @@ public class RuntimeDebugger {
 				final URL configURL = new File(module.configLocation).toURI().toURL();
 				configStream = configURL.openStream();
 			}
-			runtime.add(moduleclass, configStream, module.resourcesDir);
+			final List<File> resources = (module.resourcesDir==null&&module.sharedResourcesDir==null) ? null : new ArrayList<File>();
+			if (module.resourcesDir != null) {
+				resources.addAll(FileUtils.instance.getFiles(module.resourcesDir));
+			}
+			if (module.sharedResourcesDir != null) {
+				resources.addAll(FileUtils.instance.getFiles(module.sharedResourcesDir));
+			}
+			runtime.add(moduleclass, configStream, resources);
 		}
 	}
 
@@ -135,10 +142,12 @@ public class RuntimeDebugger {
 	public void addHBM(final String hbmPath) throws IOException, SAXException, ParserConfigurationException {
 		final Document document = FileUtils.instance.readAsDocument(new File(hbmPath));
 		final HBM hbm = new HBM(document);
+		final String sharedResourcesDir = (hbm.shared==null) ? null : hbm.shared.resourcesDir;
 		final int size = hbm.modules.size();
 		for (int i = 0; i < size; i++) {
 			final HBMModule module = hbm.modules.get(i);
-			final ModuleNode node = new ModuleNode(module.classname, module.configFile, module.resourcesDir);
+			final ModuleNode node = new ModuleNode(module.classname, module.configFile,
+					module.resourcesDir, sharedResourcesDir);
 			this.addModule(node);
 		}
 	}

@@ -266,6 +266,7 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 		// Parse HAM file.
 		final Document document = FileUtils.instance.readAsDocument(hamFile);
 		final HAM ham = new HAM(document);
+		final String sharedResourcesDir = (ham.shared==null) ? null : ham.shared.resourcesDir;
 		// Parse all modules.
 		final String appDir = UEnvironment.instance.getApplicationDir(ham.applicationName);
 		final int size = ham.modules.size();
@@ -275,7 +276,8 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 			final StringBuilder jarPath = new StringBuilder();
 			jarPath.append(appDir).append(hamModule.classname).append(File.separator);
 			jarPath.append(hamModule.classname).append(".jar");
-			final JarModuleNode module = new JarModuleNode(jarPath.toString(), hamModule.classname, hamModule.configFile, hamModule.resourcesDir);
+			final JarModuleNode module = new JarModuleNode(jarPath.toString(), hamModule.classname,
+					hamModule.configFile, hamModule.resourcesDir, sharedResourcesDir);
 			list.add(module);
 		}
 		return list;
@@ -300,7 +302,14 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 			final URL configURL = new File(module.configLocation).toURI().toURL();
 			configStream = configURL.openStream();
 		}
-		runtime.add(moduleclass, configStream, module.resourcesDir);
+		final List<File> resources = (module.resourcesDir==null&&module.sharedResourcesDir==null) ? null : new ArrayList<File>();
+		if (module.resourcesDir != null) {
+			resources.addAll(FileUtils.instance.getFiles(module.resourcesDir));
+		}
+		if (module.sharedResourcesDir != null) {
+			resources.addAll(FileUtils.instance.getFiles(module.sharedResourcesDir));
+		}
+		runtime.add(moduleclass, configStream, resources);
 	}
 	
 	@Override
