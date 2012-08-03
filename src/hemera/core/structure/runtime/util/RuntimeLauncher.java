@@ -12,7 +12,7 @@ import hemera.core.execution.interfaces.IExecutionService;
 import hemera.core.execution.interfaces.IServiceListener;
 import hemera.core.execution.listener.FileServiceListener;
 import hemera.core.execution.scalable.ScalableService;
-import hemera.core.structure.interfaces.IModule;
+import hemera.core.structure.interfaces.IResource;
 import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.util.IRuntimeLauncher;
 import hemera.core.utility.FileUtils;
@@ -295,7 +295,7 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 		// Load and instantiate module.
 		final URL jarurl = new File(module.jarLocation).toURI().toURL();
 		final URLClassLoader loader = new URLClassLoader(new URL[] {jarurl});
-		final Class<? extends IModule> moduleclass = (Class<? extends IModule>)loader.loadClass(module.classname);
+		final Class<? extends IResource> moduleclass = (Class<? extends IResource>)loader.loadClass(module.classname);
 		// Add module.
 		InputStream configStream = null;
 		if (module.configLocation != null) {

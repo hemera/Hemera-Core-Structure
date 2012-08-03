@@ -20,7 +20,7 @@ import hemera.core.environment.enumn.EEnvironment;
 import hemera.core.environment.hbm.HBM;
 import hemera.core.environment.hbm.HBMModule;
 import hemera.core.environment.util.UEnvironment;
-import hemera.core.structure.interfaces.IModule;
+import hemera.core.structure.interfaces.IResource;
 import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.util.IRuntimeLauncher;
 import hemera.core.utility.FileUtils;
@@ -111,7 +111,7 @@ public class RuntimeDebugger {
 		for (int i = 0; i < size; i++) {
 			final ModuleNode module = this.modules.get(i);
 			// Load and instantiate module.
-			final Class<? extends IModule> moduleclass = (Class<? extends IModule>)this.getClass().getClassLoader().loadClass(module.classname);
+			final Class<? extends IResource> moduleclass = (Class<? extends IResource>)this.getClass().getClassLoader().loadClass(module.classname);
 			// Add module.
 			InputStream configStream = null;
 			if (module.configLocation != null) {

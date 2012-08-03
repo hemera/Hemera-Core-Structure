@@ -5,24 +5,19 @@ import hemera.core.structure.enumn.ERedirect;
 /**
  * <code>IProcessor</code> defines the interface of a
  * single processing unit that belongs to a particular
- * module unit. The processor encapsulates a set of
+ * resource unit. The processor encapsulates a set of
  * logic operations that are performed in response to
  * a specific type of requests. The logic contained by
  * a processor unit should be self-contained and can
  * be expressed in a set of instructions or tasks.
  * <p>
- * An <code>IProcessor</code> instance is defined as a
- * REST resource contained within its parent module
- * container resource. The processor should be accessed
- * via HTTP requests at <code>/module/processor</code>.
- * <p>
  * <code>IProcessor</code> instances are constructed
- * by a particular module unit for a specific type of
+ * by a particular resource unit for a specific type of
  * requests. Its <code>process</code> method is invoked
  * when a request is received to perform its logic
  * operations based on the contents of the request. It
  * can be considered as a controller unit that alters
- * the state of its module unit.
+ * the state of its resource unit.
  * <p>
  * Processor implementations must provide the necessary
  * thread-safety guarantees, preferably with a high
@@ -33,7 +28,7 @@ import hemera.core.structure.enumn.ERedirect;
  * <code>IProcessor</code> instances can be deactivated
  * at runtime to pause request processing. This would
  * cause the operations triggered by the request type
- * to be temporarily disabled for the entire module unit.
+ * to be temporarily disabled for the entire resource.
  * <p>
  * <code>IProcessor</code> is designed to be used in
  * corporation with a single type of requests. This is
@@ -56,15 +51,15 @@ import hemera.core.structure.enumn.ERedirect;
  * the request data, either before or after the request
  * is processed.
  * <p>
- * @param T The request type that this processor is
+ * @param RQ The request type that this processor is
  * responsible for processing.
- * @param R The response type that this processor returns
- * after processing a request.
+ * @param RS The response type that this processor
+ * returns after processing a request.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
-public interface IProcessor<T extends IRequest, R extends IResponse> extends IRESTResource {
+public interface IProcessor<RQ extends IRequest, RS extends IResponse> {
 
 	/**
 	 * Process the given request and perform logic based
@@ -74,12 +69,12 @@ public interface IProcessor<T extends IRequest, R extends IResponse> extends IRE
 	 * guarantees with high concurrency capabilities to
 	 * allow concurrent invocations to process requests
 	 * received concurrently.
-	 * @param request The <code>T</code> request to be
+	 * @param request The <code>RQ</code> request to be
 	 * processed.
-	 * @return The <code>R</code> processing result. Or
+	 * @return The <code>RS</code> processing result. Or
 	 * <code>null</code> if the processor is inactive.
 	 */
-	public R process(final T request);
+	public RS process(final RQ request);
 
 	/**
 	 * Set the activeness of the processor instance.
@@ -96,40 +91,40 @@ public interface IProcessor<T extends IRequest, R extends IResponse> extends IRE
 	/**
 	 * Retrieve the request class that this processor
 	 * is responsible for processing.
-	 * @return The <code>Class</code> of <code>T</code>
+	 * @return The <code>Class</code> of <code>RQ</code>
 	 * the request.
 	 */
-	public Class<T> getRequestType();
+	public Class<RQ> getRequestType();
 	
 	/**
 	 * Build the redirect URI based on given request.
 	 * This method is only invoked if the redirect
 	 * behavior is redirect-before-invoke.
-	 * @param request The <code>T</code> request to be
+	 * @param request The <code>RQ</code> request to be
 	 * processed.
 	 * @return The <code>String</code> redirect URI.
 	 */
-	public String getRedirectURI(final T request);
+	public String getRedirectURI(final RQ request);
 	
 	/**
 	 * Build the redirect URI based on given request
 	 * and response. This method is only invoked if the
 	 * redirect behavior is redirect-after-invoke.
-	 * @param request The <code>T</code> request to be
+	 * @param request The <code>RQ</code> request to be
 	 * processed.
-	 * @param response The <code>R</code> response.
+	 * @param response The <code>RS</code> response.
 	 * @return The <code>String</code> redirect URI.
 	 */
-	public String getRedirectURI(final T request, final R response);
+	public String getRedirectURI(final RQ request, final RS response);
 
 	/**
 	 * Determine the redirecting behavior based on the
 	 * given request.
-	 * @param request The <code>T</code> request to be
+	 * @param request The <code>RQ</code> request to be
 	 * processed.
 	 * @return The <code>ERedirect</code> enumeration.
 	 */
-	public ERedirect getRedirectBehavior(final T request);
+	public ERedirect getRedirectBehavior(final RQ request);
 
 	/**
 	 * Check if this processor unit is active.

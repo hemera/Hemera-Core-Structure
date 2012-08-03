@@ -11,8 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.w3c.dom.Document;
 
 import hemera.core.execution.interfaces.IExecutionService;
-import hemera.core.structure.interfaces.IModule;
-import hemera.core.structure.interfaces.runtime.IProcessorRegistry;
+import hemera.core.structure.interfaces.IResource;
 import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.util.IRuntimeHandle;
 import hemera.core.utility.FileUtils;
@@ -21,7 +20,7 @@ import hemera.core.utility.logging.FileLogger;
 /**
  * <code>Runtime</code> defines the abstraction of the
  * execution and structure environment for all the
- * running modules on a physical or virtual machine.
+ * running resources on a physical or virtual machine.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0
@@ -40,21 +39,17 @@ public abstract class Runtime implements IRuntime {
 	 */
 	protected final IRuntimeHandle handle;
 	/**
-	 * The <code>ProcessorRegistry</code> instance.
-	 */
-	private final ProcessorRegistry registry;
-	/**
 	 * The <code>Lock</code> used to synchronize the
 	 * <code>activate</code> and <code>shutdown</code>
 	 * methods.
 	 */
 	private final Lock lock;
 	/**
-	 * The <code>ConcurrentMap</code> of REST path
-	 * <code>String</code> to <code>IModule</code>
+	 * The <code>ConcurrentMap</code> of HTTP path
+	 * <code>String</code> to <code>IResource</code>
 	 * instance.
 	 */
-	private final ConcurrentMap<String, IModule> modules;
+	private final ConcurrentMap<String, IResource> resources;
 	/**
 	 * The <code>boolean</code> flag indicating if the
 	 * runtime environment has been activated.
@@ -73,12 +68,11 @@ public abstract class Runtime implements IRuntime {
 		this.logger = FileLogger.getLogger(Runtime.class);
 		this.service = service;
 		this.handle = new RuntimeHandle();
-		this.registry = new ProcessorRegistry();
 		// Internal fields.
 		this.lock = new ReentrantLock();
 		// Use default concurrency level since the number of
 		// concurrent updating threads shouldn't be too large.
-		this.modules = new ConcurrentHashMap<String, IModule>();
+		this.resources = new ConcurrentHashMap<String, IResource>();
 		this.activated = false;
 	}
 
@@ -137,12 +131,12 @@ public abstract class Runtime implements IRuntime {
 		try {
 			if (!this.activated) return;
 			this.logger.info("Runtime shutting down...");
-			// Dispose all modules.
-			for(final IModule module : this.modules.values()) {
+			// Dispose all resources.
+			for(final IResource resource : this.resources.values()) {
 				try {
-					module.dispose();
+					resource.dispose();
 				} catch (final Exception e) {
-					this.logger.severe("Failed to dispose module: " + module.getClass().getName());
+					this.logger.severe("Failed to dispose resource: " + resource.getClass().getName());
 					this.logger.exception(e);
 				}
 			}
@@ -172,7 +166,7 @@ public abstract class Runtime implements IRuntime {
 	 * Perform the runtime type specific components
 	 * shutdown logic.
 	 * <p>
-	 * All the hosted modules have been disposed at
+	 * All the hosted resources have been disposed at
 	 * the time this method is invoked, though all
 	 * the basic services are still active. Services
 	 * are shut down after the completion of this
@@ -183,37 +177,35 @@ public abstract class Runtime implements IRuntime {
 	protected abstract void shutdownComponents() throws Exception;
 
 	@Override
-	public final boolean add(final Class<? extends IModule> moduleclass, final InputStream configStream, final List<File> resources) throws Exception {
+	public final boolean add(final Class<? extends IResource> resourceClass, final InputStream configStream,
+			final List<File> resources) throws Exception {
 		try {
 			this.statusCheck();
-			// Cache module instance and check for duplicate.
-			final IModule module = this.addCache(moduleclass);
-			if (module == null) return false;
+			// Cache resource instance and check for duplicate.
+			final IResource resource = this.addCache(resourceClass);
+			if (resource == null) return false;
 			//  Injection services.
-			this.injectServices(module);
+			this.injectServices(resource);
 			// Inject resources.
-			module.inject(resources);
+			resource.inject(resources);
 			// Customization.
 			if (configStream != null) {
 				final Document config = FileUtils.instance.readAsDocument(configStream);
-				module.customize(config);
+				resource.customize(config);
 			}
 			// Initialization.
-			module.initialize();
+			resource.initialize();
 			// Activation.
-			module.activate();
-			// Register processors after module is fully activated
-			// so incoming requests can be processed properly.
-			this.registry.register(module);
+			resource.activate();
 			// Logging.
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Addition of module: ").append(moduleclass.getName());
+			builder.append("Addition of resource: ").append(resourceClass.getName());
 			builder.append(" succeeded");
 			this.logger.info(builder.toString());
 			return true;
 		} catch (final Exception e) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Addition of module: ").append(moduleclass.getName());
+			builder.append("Addition of resource: ").append(resourceClass.getName());
 			builder.append(" failed");
 			this.logger.severe(builder.toString());
 			throw e;
@@ -221,74 +213,74 @@ public abstract class Runtime implements IRuntime {
 	}
 
 	/**
-	 * Add an instance of the given module class into
-	 * the module cache store if it is not already added.
+	 * Add an instance of the given resource class into
+	 * the resources store if it is not already added.
 	 * All duplicates are ignored and logged.
-	 * @param moduleclass The <code>Class</code> of the
-	 * module to be added and hosted by the runtime.
-	 * @return The added <code>IModule</code> instance if
+	 * @param resourceClass The <code>Class</code> of the
+	 * resource to be added and hosted by the runtime.
+	 * @return The added <code>IResource</code> instance if
 	 * the insertion is successful. <code>null</code> if
-	 * the module defined REST path already exists.
+	 * the resource defined REST path already exists.
 	 * @throws IllegalAccessException If instantiation
 	 * failed.
 	 * @throws InstantiationException If instantiation
 	 * failed.
 	 */
-	private IModule addCache(final Class<? extends IModule> moduleclass) throws InstantiationException, IllegalAccessException {
-		final IModule module = moduleclass.newInstance();
-		final String path = module.getPath();
+	private IResource addCache(final Class<? extends IResource> resourceClass) throws InstantiationException, IllegalAccessException {
+		final IResource resource = resourceClass.newInstance();
+		final String path = resource.getPath();
 		// Early check.
-		if (this.modules.containsKey(path)) return null;
+		if (this.resources.containsKey(path)) return null;
 		// Try to add.
-		final IModule prev = this.modules.putIfAbsent(path, module);
+		final IResource prev = this.resources.putIfAbsent(path, resource);
 		final boolean succeeded = (prev == null);
 		// Log duplicates.
 		if (!succeeded) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Duplicate addition of module at REST path: ").append(path);
+			builder.append("Duplicate addition of resource at REST path: ").append(path);
 			this.logger.warning(builder.toString());
 			return null;
 		}
-		return module;
+		return resource;
 	}
 
 	/**
-	 * Inject the basic services into the module.
+	 * Inject the basic services into the resource.
 	 * <p>
 	 * This method may be override to allow injection
 	 * of additional runtime type specific services.
-	 * @param module The <code>IModule</code> to be
+	 * @param resource The <code>IResource</code> to be
 	 * injected with services.
 	 */
-	protected void injectServices(final IModule module) {
-		module.inject(this.service);
-		module.inject(this.handle);
+	protected void injectServices(final IResource resource) {
+		resource.inject(this.service);
+		resource.inject(this.handle);
 	}
 
 	@Override
 	public final boolean remove(final String path) throws Exception {
 		this.statusCheck();
 		// Remove from cache.
-		final IModule module = this.modules.remove(path);
-		if (module == null) {
+		final IResource resource = this.resources.remove(path);
+		if (resource == null) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Removing module at REST path: ").append(path);
-			builder.append("failed. Runtime does not host the module");
+			builder.append("Removing resource at REST path: ").append(path);
+			builder.append("failed. Runtime does not host the resource.");
 			this.logger.warning(builder.toString());
 			return false;
 		}
 		try {
-			module.dispose();
+			resource.dispose();
 			// Logging.
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Module at REST path: ").append(path);
-			builder.append(" removed from runtime environment");
+			builder.append("Resource at REST path: ").append(path);
+			builder.append(" removed from runtime environment.");
 			this.logger.info(builder.toString());
 			return true;
 		} catch (Exception e) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Removing of module at REST path: ").append(path);
-			builder.append(" failed");
+			builder.append("Removing of resource at REST path: ").append(path);
+			builder.append(" failed.");
 			this.logger.severe(builder.toString());
 			throw e;
 		}
@@ -305,13 +297,8 @@ public abstract class Runtime implements IRuntime {
 	}
 
 	@Override
-	public IModule getModule(final String path) {
-		return this.modules.get(path);
-	}
-	
-	@Override
-	public IProcessorRegistry getProcessorRegistry() {
-		return this.registry;
+	public IResource getResource(final String path) {
+		return this.resources.get(path);
 	}
 
 	/**
