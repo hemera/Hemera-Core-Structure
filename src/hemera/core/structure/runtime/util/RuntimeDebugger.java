@@ -18,7 +18,7 @@ import org.xml.sax.SAXException;
 import hemera.core.environment.config.Configuration;
 import hemera.core.environment.enumn.EEnvironment;
 import hemera.core.environment.hbm.HBM;
-import hemera.core.environment.hbm.HBMModule;
+import hemera.core.environment.hbm.HBMResource;
 import hemera.core.environment.util.UEnvironment;
 import hemera.core.structure.interfaces.IResource;
 import hemera.core.structure.interfaces.runtime.IRuntime;
@@ -143,9 +143,9 @@ public class RuntimeDebugger {
 		final Document document = FileUtils.instance.readAsDocument(new File(hbmPath));
 		final HBM hbm = new HBM(document);
 		final String sharedResourcesDir = (hbm.shared==null) ? null : hbm.shared.resourcesDir;
-		final int size = hbm.modules.size();
+		final int size = hbm.resources.size();
 		for (int i = 0; i < size; i++) {
-			final HBMModule module = hbm.modules.get(i);
+			final HBMResource module = hbm.resources.get(i);
 			final ModuleNode node = new ModuleNode(module.classname, module.configFile,
 					module.resourcesDir, sharedResourcesDir);
 			this.addModule(node);

@@ -3,7 +3,7 @@ package hemera.core.structure.runtime.util;
 import hemera.core.environment.config.Configuration;
 import hemera.core.environment.enumn.EEnvironment;
 import hemera.core.environment.ham.HAM;
-import hemera.core.environment.ham.HAMModule;
+import hemera.core.environment.ham.HAMResource;
 import hemera.core.environment.util.UEnvironment;
 import hemera.core.execution.assisted.AssistedService;
 import hemera.core.execution.exception.FileExceptionHandler;
@@ -269,10 +269,10 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 		final String sharedResourcesDir = (ham.shared==null) ? null : ham.shared.resourcesDir;
 		// Parse all modules.
 		final String appDir = UEnvironment.instance.getApplicationDir(ham.applicationName);
-		final int size = ham.modules.size();
+		final int size = ham.resources.size();
 		final List<JarModuleNode> list = new ArrayList<JarModuleNode>(size);
 		for (int i = 0; i < size; i++) {
-			final HAMModule hamModule = ham.modules.get(i);
+			final HAMResource hamModule = ham.resources.get(i);
 			final StringBuilder jarPath = new StringBuilder();
 			jarPath.append(appDir).append(hamModule.classname).append(File.separator);
 			jarPath.append(hamModule.classname).append(".jar");
