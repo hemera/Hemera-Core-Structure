@@ -88,9 +88,9 @@ public abstract class Runtime implements IRuntime {
 			this.activateComponents();
 			// Set flag.
 			this.activated = true;
-			this.logger.info("Runtime environment activated");
+			this.logger.info("Runtime environment activated.");
 		} catch (Exception e) {
-			this.logger.severe("Runtime activation failed");
+			this.logger.severe("Runtime activation failed.");
 			this.logger.exception(e);
 		} finally {
 			this.lock.unlock();
@@ -200,13 +200,13 @@ public abstract class Runtime implements IRuntime {
 			// Logging.
 			final StringBuilder builder = new StringBuilder();
 			builder.append("Addition of resource: ").append(resourceClass.getName());
-			builder.append(" succeeded");
+			builder.append(" at REST path: ").append(resource.getPath()).append(" succeeded.");
 			this.logger.info(builder.toString());
 			return true;
 		} catch (final Exception e) {
 			final StringBuilder builder = new StringBuilder();
 			builder.append("Addition of resource: ").append(resourceClass.getName());
-			builder.append(" failed");
+			builder.append(" failed.");
 			this.logger.severe(builder.toString());
 			throw e;
 		}
@@ -237,7 +237,7 @@ public abstract class Runtime implements IRuntime {
 		// Log duplicates.
 		if (!succeeded) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Duplicate addition of resource at REST path: ").append(path);
+			builder.append("Duplicate addition of resource at REST path: ").append(path).append(".");
 			this.logger.warning(builder.toString());
 			return null;
 		}
