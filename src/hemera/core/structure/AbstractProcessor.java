@@ -32,11 +32,16 @@ import hemera.core.utility.logging.FileLogger;
  * processing, this processor still returns a value
  * produced based on the contents of the request and
  * the exception occurred.
+ * <p>
+ * @param RQ The request type that this processor is
+ * responsible for processing.
+ * @param RS The response type that this processor
+ * returns after processing a request.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
-public abstract class AbstractProcessor<T extends IRequest, R extends IResponse> implements IProcessor<T, R> {
+public abstract class AbstractProcessor<RQ extends IRequest, RS extends IResponse> implements IProcessor<RQ, RS> {
 	/**
 	 * The <code>FileLogger</code> instance.
 	 */
@@ -71,7 +76,7 @@ public abstract class AbstractProcessor<T extends IRequest, R extends IResponse>
 	}
 
 	@Override
-	public final R process(final T request) {
+	public final RS process(final RQ request) {
 		if (!this.active) return null;
 		try {
 			return this.processRequest(request);
@@ -94,23 +99,23 @@ public abstract class AbstractProcessor<T extends IRequest, R extends IResponse>
 	 * implementations should still try to catch
 	 * important exceptions to a provide more detailed
 	 * and relevant handling.
-	 * @param request The <code>T</code> request to be
+	 * @param request The <code>RQ</code> request to be
 	 * processed.
 	 * @throws Exception If any processing logic failed.
 	 */
-	protected abstract R processRequest(final T request) throws Exception;
+	protected abstract RS processRequest(final RQ request) throws Exception;
 	
 	/**
 	 * Build and return a response value when the
 	 * specified exception has occurred during the
 	 * processing of given request.
-	 * @param request The <code>T</code> request that
+	 * @param request The <code>RQ</code> request that
 	 * caused the exception.
 	 * @param e The <code>Exception</code> thrown
 	 * during the processing of the request.
-	 * @return The <code>R</code> response value.
+	 * @return The <code>RS</code> response value.
 	 */
-	protected abstract R exceptionResponse(final T request, final Exception e);
+	protected abstract RS exceptionResponse(final RQ request, final Exception e);
 
 	@Override
 	public void setActive(final boolean active) {
@@ -118,17 +123,17 @@ public abstract class AbstractProcessor<T extends IRequest, R extends IResponse>
 	}
 	
 	@Override
-	public String getRedirectURI(final T request) {
+	public String getRedirectURI(final RQ request) {
 		return null;
 	}
 
 	@Override
-	public String getRedirectURI(final T request, final R response) {
+	public String getRedirectURI(final RQ request, final RS response) {
 		return null;
 	}
 
 	@Override
-	public ERedirect getRedirectBehavior(final T request) {
+	public ERedirect getRedirectBehavior(final RQ request) {
 		return ERedirect.Invoke;
 	}
 
