@@ -39,9 +39,9 @@ public class RuntimeDebugger {
 	 */
 	private final String homeDir;
 	/**
-	 * The <code>List</code> of <code>ModuleNode</code>.
+	 * The <code>List</code> of <code>ResourceNode</code>.
 	 */
-	private final List<ModuleNode> modules;
+	private final List<ResourceNode> resources;
 
 	/**
 	 * Constructor of <code>RuntimeDebugger</code>.
@@ -50,11 +50,11 @@ public class RuntimeDebugger {
 	 */
 	public RuntimeDebugger(final String homeDir) {
 		this.homeDir = FileUtils.instance.getValidDir(homeDir);
-		this.modules = new ArrayList<ModuleNode>();
+		this.resources = new ArrayList<ResourceNode>();
 	}
 
 	/**
-	 * Start the debugger with added modules.
+	 * Start the debugger with added resources.
 	 * @throws Exception If any launching logic failed.
 	 */
 	public void start() throws Exception {
@@ -63,9 +63,9 @@ public class RuntimeDebugger {
 		// Initialize and start runtime environment launcher.
 		final IRuntimeLauncher launcher = this.initRuntimeLauncher();
 		launcher.start();
-		// Deploy added modules.
+		// Deploy added resources.
 		final IRuntime runtime = launcher.getRuntime();
-		this.deployModules(runtime);
+		this.deployResources(runtime);
 	}
 
 	/**
@@ -99,38 +99,38 @@ public class RuntimeDebugger {
 	}
 	
 	/**
-	 * Deploy all the added modules with the given
+	 * Deploy all the added resources with the given
 	 * runtime.
 	 * @param runtime The <code>IRuntime</code> to
-	 * deploy modules with.
+	 * deploy resources with.
 	 * @throws Exception If any processing failed.
 	 */
 	@SuppressWarnings("unchecked")
-	private void deployModules(final IRuntime runtime) throws Exception {
-		final int size = this.modules.size();
+	private void deployResources(final IRuntime runtime) throws Exception {
+		final int size = this.resources.size();
 		for (int i = 0; i < size; i++) {
-			final ModuleNode module = this.modules.get(i);
-			// Load and instantiate module.
-			final Class<? extends IResource> moduleclass = (Class<? extends IResource>)this.getClass().getClassLoader().loadClass(module.classname);
-			// Add module.
+			final ResourceNode resource = this.resources.get(i);
+			// Load and instantiate resource.
+			final Class<? extends IResource> resourceclass = (Class<? extends IResource>)this.getClass().getClassLoader().loadClass(resource.classname);
+			// Add resource.
 			InputStream configStream = null;
-			if (module.configLocation != null) {
-				final URL configURL = new File(module.configLocation).toURI().toURL();
+			if (resource.configLocation != null) {
+				final URL configURL = new File(resource.configLocation).toURI().toURL();
 				configStream = configURL.openStream();
 			}
-			final List<File> resources = (module.resourcesDir==null&&module.sharedResourcesDir==null) ? null : new ArrayList<File>();
-			if (module.resourcesDir != null) {
-				resources.addAll(FileUtils.instance.getFiles(module.resourcesDir));
+			final List<File> resources = (resource.resourcesDir==null&&resource.sharedResourcesDir==null) ? null : new ArrayList<File>();
+			if (resource.resourcesDir != null) {
+				resources.addAll(FileUtils.instance.getFiles(resource.resourcesDir));
 			}
-			if (module.sharedResourcesDir != null) {
-				resources.addAll(FileUtils.instance.getFiles(module.sharedResourcesDir));
+			if (resource.sharedResourcesDir != null) {
+				resources.addAll(FileUtils.instance.getFiles(resource.sharedResourcesDir));
 			}
-			runtime.add(moduleclass, configStream, resources);
+			runtime.add(resourceclass, configStream, resources);
 		}
 	}
 
 	/**
-	 * Add all the modules defined in the HBM file at
+	 * Add all the resources defined in the HBM file at
 	 * given path for debugging.
 	 * @param hbmPath The <code>String</code> path to
 	 * the HBM file.
@@ -145,20 +145,20 @@ public class RuntimeDebugger {
 		final String sharedResourcesDir = (hbm.shared==null) ? null : hbm.shared.resourcesDir;
 		final int size = hbm.resources.size();
 		for (int i = 0; i < size; i++) {
-			final HBMResource module = hbm.resources.get(i);
-			final ModuleNode node = new ModuleNode(module.classname, module.configFile,
-					module.resourcesDir, sharedResourcesDir);
-			this.addModule(node);
+			final HBMResource resource = hbm.resources.get(i);
+			final ResourceNode node = new ResourceNode(resource.classname, resource.configFile,
+					resource.resourcesDir, sharedResourcesDir);
+			this.addResource(node);
 		}
 	}
 
 	/**
-	 * Add the given module node for debugging.
-	 * @param module The <code>ModuleNode</code> to
+	 * Add the given resource node for debugging.
+	 * @param resource The <code>ResourceNode</code> to
 	 * add.
 	 */
-	public void addModule(final ModuleNode module) {
-		this.modules.add(module);
+	public void addResource(final ResourceNode resource) {
+		this.resources.add(resource);
 	}
 
 	/**

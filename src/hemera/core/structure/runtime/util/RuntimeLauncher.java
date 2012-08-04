@@ -113,8 +113,8 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 		try {
 			// Activate.
 			runtime.activate();
-			// Scan and deploy modules.
-			if (this.scanApps) this.scanAndDeployModules(runtime);
+			// Scan and deploy resources.
+			if (this.scanApps) this.scanAndDeployResources(runtime);
 			// Return runtime.
 			return runtime;
 		} catch (Exception e) {
@@ -228,88 +228,88 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 
 	/**
 	 * Scan the applications directory and deploy all of
-	 * the modules.
+	 * the resources.
 	 * @param runtime The <code>IRuntime</code> instance.
 	 * @throws Exception If any processing failed.
 	 */
-	private void scanAndDeployModules(final IRuntime runtime) throws Exception {
+	private void scanAndDeployResources(final IRuntime runtime) throws Exception {
 		final String appsDir = UEnvironment.instance.getInstalledAppsDir();
 		// Scan all HAM files.
 		final List<File> hamFiles = FileUtils.instance.getFiles(appsDir, EEnvironment.HAMExtension.value);
-		// Parse out module configurations.
-		final List<JarModuleNode> modules = new ArrayList<JarModuleNode>();
+		// Parse out resource configurations.
+		final List<JarResourceNode> resources = new ArrayList<JarResourceNode>();
 		final int hamSize = hamFiles.size();
 		for (int i = 0; i < hamSize; i++) {
 			final File hamFile = hamFiles.get(i);
-			modules.addAll(this.parseModuleNodes(hamFile));
+			resources.addAll(this.parseResourceNodes(hamFile));
 		}
-		// Deploy all modules.
-		final int size = modules.size();
+		// Deploy all resources.
+		final int size = resources.size();
 		for (int i = 0; i < size; i++) {
-			final JarModuleNode module = modules.get(i);
-			this.deployModule(module, runtime);
+			final JarResourceNode resource = resources.get(i);
+			this.deployResource(resource, runtime);
 		}
 	}
 
 	/**
 	 * Parse the HAM file and retrieve the application
-	 * module nodes.
+	 * resource nodes.
 	 * @param hamFile The HAM <code>File</code>.
 	 * @return The <code>List</code> of all the auto-
-	 * deploy <code>JarModuleNode</code>.
+	 * deploy <code>JarResourceNode</code>.
 	 * @throws IOException If file parsing failed.
 	 * @throws ParserConfigurationException If XML
 	 * parsing failed.
 	 * @throws SAXException If XML parsing failed. 
 	 */
-	private List<JarModuleNode> parseModuleNodes(final File hamFile) throws IOException, SAXException, ParserConfigurationException {
+	private List<JarResourceNode> parseResourceNodes(final File hamFile) throws IOException, SAXException, ParserConfigurationException {
 		// Parse HAM file.
 		final Document document = FileUtils.instance.readAsDocument(hamFile);
 		final HAM ham = new HAM(document);
 		final String sharedResourcesDir = (ham.shared==null) ? null : ham.shared.resourcesDir;
-		// Parse all modules.
+		// Parse all resources.
 		final String appDir = UEnvironment.instance.getApplicationDir(ham.applicationName);
 		final int size = ham.resources.size();
-		final List<JarModuleNode> list = new ArrayList<JarModuleNode>(size);
+		final List<JarResourceNode> list = new ArrayList<JarResourceNode>(size);
 		for (int i = 0; i < size; i++) {
-			final HAMResource hamModule = ham.resources.get(i);
+			final HAMResource hamResource = ham.resources.get(i);
 			final StringBuilder jarPath = new StringBuilder();
-			jarPath.append(appDir).append(hamModule.classname).append(File.separator);
-			jarPath.append(hamModule.classname).append(".jar");
-			final JarModuleNode module = new JarModuleNode(jarPath.toString(), hamModule.classname,
-					hamModule.configFile, hamModule.resourcesDir, sharedResourcesDir);
-			list.add(module);
+			jarPath.append(appDir).append(hamResource.classname).append(File.separator);
+			jarPath.append(hamResource.classname).append(".jar");
+			final JarResourceNode resource = new JarResourceNode(jarPath.toString(), hamResource.classname,
+					hamResource.configFile, hamResource.resourcesDir, sharedResourcesDir);
+			list.add(resource);
 		}
 		return list;
 	}
 
 	/**
-	 * Deploy the module defined by the given module
+	 * Deploy the resource defined by the given resource
 	 * node.
-	 * @param module The <code>JarModuleNode</code>.
+	 * @param resource The <code>JarResourceNode</code>.
 	 * @param runtime The <code>IRuntime</code> instance.
 	 * @throws Exception If any processing failed.
 	 */
 	@SuppressWarnings("unchecked")
-	private void deployModule(final JarModuleNode module, final IRuntime runtime) throws Exception {
-		// Load and instantiate module.
-		final URL jarurl = new File(module.jarLocation).toURI().toURL();
+	private void deployResource(final JarResourceNode resource, final IRuntime runtime) throws Exception {
+		// Load and instantiate resource.
+		final URL jarurl = new File(resource.jarLocation).toURI().toURL();
 		final URLClassLoader loader = new URLClassLoader(new URL[] {jarurl});
-		final Class<? extends IResource> moduleclass = (Class<? extends IResource>)loader.loadClass(module.classname);
-		// Add module.
+		final Class<? extends IResource> resourceClass = (Class<? extends IResource>)loader.loadClass(resource.classname);
+		// Add resource.
 		InputStream configStream = null;
-		if (module.configLocation != null) {
-			final URL configURL = new File(module.configLocation).toURI().toURL();
+		if (resource.configLocation != null) {
+			final URL configURL = new File(resource.configLocation).toURI().toURL();
 			configStream = configURL.openStream();
 		}
-		final List<File> resources = (module.resourcesDir==null&&module.sharedResourcesDir==null) ? null : new ArrayList<File>();
-		if (module.resourcesDir != null) {
-			resources.addAll(FileUtils.instance.getFiles(module.resourcesDir));
+		final List<File> resources = (resource.resourcesDir==null&&resource.sharedResourcesDir==null) ? null : new ArrayList<File>();
+		if (resource.resourcesDir != null) {
+			resources.addAll(FileUtils.instance.getFiles(resource.resourcesDir));
 		}
-		if (module.sharedResourcesDir != null) {
-			resources.addAll(FileUtils.instance.getFiles(module.sharedResourcesDir));
+		if (resource.sharedResourcesDir != null) {
+			resources.addAll(FileUtils.instance.getFiles(resource.sharedResourcesDir));
 		}
-		runtime.add(moduleclass, configStream, resources);
+		runtime.add(resourceClass, configStream, resources);
 	}
 	
 	@Override

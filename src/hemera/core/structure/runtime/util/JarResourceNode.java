@@ -1,35 +1,35 @@
 package hemera.core.structure.runtime.util;
 
 /**
- * <code>JarModuleNode</code> defines the immutable
- * extension of a module node whose class files are
+ * <code>JarResourceNode</code> defines the immutable
+ * extension of a resource node whose class files are
  * in a Jar file.
  *
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
-public class JarModuleNode extends ModuleNode {
+public class JarResourceNode extends ResourceNode {
 	/**
-	 * The <code>String</code> module JAR file location.
+	 * The <code>String</code> resource JAR file location.
 	 */
 	public final String jarLocation;
 
 	/**
-	 * Constructor of <code>JarModuleNode</code>.
+	 * Constructor of <code>JarResourceNode</code>.
 	 * @param jarLocation The <code>String</code>
-	 * module JAR file location.
+	 * resource JAR file location.
 	 * @param classname The <code>String</code>
-	 * fully qualified class name of the module
+	 * fully qualified class name of the resource
 	 * implementation.
 	 * @param configLocation The <code>String</code>
-	 * module configuration file location. This is
+	 * resource configuration file location. This is
 	 * an optional value and can be <code>null</code>.
 	 * @param resourcesDir The <code>String</code>
-	 * optional module resources directory.
+	 * optional resources directory.
 	 * @param sharedResourcesDir The optional shared
 	 * resources directory <code>String</code>.
 	 */
-	public JarModuleNode(final String jarLocation, final String classname, final String configLocation,
+	public JarResourceNode(final String jarLocation, final String classname, final String configLocation,
 			final String resourcesDir, final String sharedResourcesDir) {
 		super(classname, configLocation, resourcesDir, sharedResourcesDir);
 		this.jarLocation = jarLocation;

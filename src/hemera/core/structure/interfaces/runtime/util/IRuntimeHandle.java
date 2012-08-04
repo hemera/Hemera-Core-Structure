@@ -2,7 +2,7 @@ package hemera.core.structure.interfaces.runtime.util;
 
 /**
  * <code>IRuntimeHandle</code> defines the interface
- * of a handle unit that allows modules to perform
+ * of a handle unit that allows resources to perform
  * invocations on the hosting runtime environment.
  *
  * @author Yi Wang (Neakor)
