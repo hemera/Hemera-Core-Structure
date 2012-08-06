@@ -207,11 +207,18 @@ public interface IResource {
 	
 	/**
 	 * Retrieve the processor responsible for given
-	 * HTTP method.
+	 * ID, custom action and HTTP method.
+	 * @param id The optional <code>long</code> ID.
+	 * This value may be <code>Long.MIN_VALUE</code> if
+	 * there is no ID specified.
+	 * @param action The optional <code>String</code>
+	 * custom action in addition to the HTTP method.
+	 * This value may be <code>null</code> if there is
+	 * no custom action specified.
 	 * @param method The <code>EHttpMethod</code> value.
 	 * @return The <code>IProcessor</code> instance.
 	 * <code>null</code> if there are no processors
 	 * provided for the method.
 	 */
-	public IProcessor<?, ?> getProcessor(final EHttpMethod method);
+	public IProcessor<?, ?> getProcessor(final long id, final String action, final EHttpMethod method);
 }
