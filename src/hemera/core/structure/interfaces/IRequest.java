@@ -30,6 +30,11 @@ public interface IRequest {
 	/**
 	 * Parse and validate the given HTTP arguments to
 	 * finalize the request instance.
+	 * @param id The <code>long</code> resource ID that
+	 * is being requested. <code>Long.MIN_VALUE</code>
+	 * if no ID is specified.
+	 * @param action The <code>String</code> requesting
+	 * action. <code>null</code> if no action is specified.
 	 * @param arguments The <code>Map</code> contents of
 	 * a HTTP request to be processed. The values in the
 	 * map are either of type <code>String</code>, or of
@@ -38,5 +43,5 @@ public interface IRequest {
 	 * invalid value is received, thus rejected by the
 	 * request.
 	 */
-	public void parse(final Map<String, Object> arguments) throws Exception;
+	public void parse(final long id, final String action, final Map<String, Object> arguments) throws Exception;
 }
