@@ -1,5 +1,7 @@
 package hemera.core.structure.interfaces;
 
+import hemera.core.structure.enumn.EHttpStatus;
+
 import org.json.JSONObject;
 
 /**
@@ -20,4 +22,10 @@ public interface IResponse {
 	 * JSON format failed.
 	 */
 	public JSONObject toJSON() throws Exception;
+	
+	/**
+	 * Retrieve the response status.
+	 * @return The <code>EHttpStatus</code> value.
+	 */
+	public EHttpStatus getStatus();
 }
