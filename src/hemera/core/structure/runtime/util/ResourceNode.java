@@ -7,27 +7,27 @@ package hemera.core.structure.runtime.util;
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
-public class ResourceNode {
+abstract class ResourceNode {
 	/**
 	 * The <code>String</code> fully qualified class
 	 * name of the module implementation.
 	 */
-	public final String classname;
+	final String classname;
 	/**
 	 * The <code>String</code> optional module
 	 * configuration file location.
 	 */
-	public final String configLocation;
+	final String configLocation;
 	/**
 	 * The <code>String</code> optional module
 	 * resources directory.
 	 */
-	public final String resourcesDir;
+	final String resourcesDir;
 	/**
 	 * The <code>String</code> optional shared
 	 * resources directory.
 	 */
-	public final String sharedResourcesDir;
+	final String sharedResourcesDir;
 
 	/**
 	 * Constructor of <code>ModuleNode</code>.
@@ -42,7 +42,7 @@ public class ResourceNode {
 	 * @param sharedResourcesDir The optional shared
 	 * resources directory <code>String</code>.
 	 */
-	public ResourceNode(final String classname, final String configLocation, final String resourcesDir,
+	ResourceNode(final String classname, final String configLocation, final String resourcesDir,
 			final String sharedResourcesDir) {
 		this.classname = classname;
 		this.configLocation = configLocation;

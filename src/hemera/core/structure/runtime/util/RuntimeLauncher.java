@@ -276,8 +276,8 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 			final StringBuilder jarPath = new StringBuilder();
 			jarPath.append(appDir).append(hamResource.classname).append(File.separator);
 			jarPath.append(hamResource.classname).append(".jar");
-			final JarResourceNode resource = new JarResourceNode(jarPath.toString(), hamResource.classname,
-					hamResource.configFile, hamResource.resourcesDir, sharedResourcesDir);
+			final JarResourceNode resource = new JarResourceNode(hamResource.classname, hamResource.configFile,
+					hamResource.resourcesDir, sharedResourcesDir, jarPath.toString());
 			list.add(resource);
 		}
 		return list;

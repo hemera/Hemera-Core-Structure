@@ -39,9 +39,9 @@ public class RuntimeDebugger {
 	 */
 	private final String homeDir;
 	/**
-	 * The <code>List</code> of <code>ResourceNode</code>.
+	 * The <code>List</code> of <code>DebugResourceNode</code>.
 	 */
-	private final List<ResourceNode> resources;
+	private final List<DebugResourceNode> resources;
 
 	/**
 	 * Constructor of <code>RuntimeDebugger</code>.
@@ -50,7 +50,7 @@ public class RuntimeDebugger {
 	 */
 	public RuntimeDebugger(final String homeDir) {
 		this.homeDir = FileUtils.instance.getValidDir(homeDir);
-		this.resources = new ArrayList<ResourceNode>();
+		this.resources = new ArrayList<DebugResourceNode>();
 	}
 
 	/**
@@ -60,12 +60,16 @@ public class RuntimeDebugger {
 	public void start() throws Exception {
 		// Explicitly set the home directory so we don't use the current Jar.
 		UEnvironment.instance.setInstalledHomeDir(this.homeDir);
+		// Create the temporary directory to store configuration files.
+		new File(UEnvironment.instance.getInstalledTempDir()).mkdirs();
 		// Initialize and start runtime environment launcher.
 		final IRuntimeLauncher launcher = this.initRuntimeLauncher();
 		launcher.start();
 		// Deploy added resources.
 		final IRuntime runtime = launcher.getRuntime();
 		this.deployResources(runtime);
+		// Add shutdown hook.
+		Runtime.getRuntime().addShutdownHook(new Thread(new DebuggerHook()));
 	}
 
 	/**
@@ -107,15 +111,18 @@ public class RuntimeDebugger {
 	 */
 	@SuppressWarnings("unchecked")
 	private void deployResources(final IRuntime runtime) throws Exception {
+		final String tempDir = UEnvironment.instance.getInstalledTempDir();
 		final int size = this.resources.size();
 		for (int i = 0; i < size; i++) {
-			final ResourceNode resource = this.resources.get(i);
+			final DebugResourceNode resource = this.resources.get(i);
+			// Process shared and resource configuration.
+			final File configFile = resource.processConfig(tempDir);
 			// Load and instantiate resource.
 			final Class<? extends IResource> resourceclass = (Class<? extends IResource>)this.getClass().getClassLoader().loadClass(resource.classname);
 			// Add resource.
 			InputStream configStream = null;
-			if (resource.configLocation != null) {
-				final URL configURL = new File(resource.configLocation).toURI().toURL();
+			if (configFile != null) {
+				final URL configURL = configFile.toURI().toURL();
 				configStream = configURL.openStream();
 			}
 			final List<File> resources = (resource.resourcesDir==null&&resource.sharedResourcesDir==null) ? null : new ArrayList<File>();
@@ -136,28 +143,29 @@ public class RuntimeDebugger {
 	 * the HBM file.
 	 * @throws IOException If reading file failed.
 	 * @throws SAXException If parsing file failed.
-	 * @throws ParserConfigurationException If
-	 * parsing file failed.
+	 * @throws ParserConfigurationException If parsing
+	 * file failed.
 	 */
 	public void addHBM(final String hbmPath) throws IOException, SAXException, ParserConfigurationException {
 		final Document document = FileUtils.instance.readAsDocument(new File(hbmPath));
 		final HBM hbm = new HBM(document);
 		final String sharedResourcesDir = (hbm.shared==null) ? null : hbm.shared.resourcesDir;
+		final String sharedConfigPath = (hbm.shared==null) ? null : hbm.shared.configFile;
 		final int size = hbm.resources.size();
 		for (int i = 0; i < size; i++) {
 			final HBMResource resource = hbm.resources.get(i);
-			final ResourceNode node = new ResourceNode(resource.classname, resource.configFile,
-					resource.resourcesDir, sharedResourcesDir);
+			final DebugResourceNode node = new DebugResourceNode(resource.classname, resource.configFile,
+					resource.resourcesDir, sharedResourcesDir, sharedConfigPath);
 			this.addResource(node);
 		}
 	}
 
 	/**
 	 * Add the given resource node for debugging.
-	 * @param resource The <code>ResourceNode</code> to
-	 * add.
+	 * @param resource The <code>DebugResourceNode</code>
+	 * to add.
 	 */
-	public void addResource(final ResourceNode resource) {
+	public void addResource(final DebugResourceNode resource) {
 		this.resources.add(resource);
 	}
 
@@ -191,6 +199,23 @@ public class RuntimeDebugger {
 		@Override
 		public DaemonController getController() {
 			return null;
+		}
+	}
+	
+	/**
+	 * <code>DebuggerHook</code> defines the JVM shutdown
+	 * hook of the debugger.
+	 *
+	 * @author Yi Wang (Neakor)
+	 * @version 1.0.0
+	 */
+	private class DebuggerHook implements Runnable {
+
+		@Override
+		public void run() {
+			// Delete the temporary directory.
+			final String tempDir = UEnvironment.instance.getInstalledTempDir();
+			FileUtils.instance.delete(tempDir);
 		}
 	}
 }

@@ -8,16 +8,14 @@ package hemera.core.structure.runtime.util;
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
-public class JarResourceNode extends ResourceNode {
+class JarResourceNode extends ResourceNode {
 	/**
 	 * The <code>String</code> resource JAR file location.
 	 */
-	public final String jarLocation;
+	final String jarLocation;
 
 	/**
 	 * Constructor of <code>JarResourceNode</code>.
-	 * @param jarLocation The <code>String</code>
-	 * resource JAR file location.
 	 * @param classname The <code>String</code>
 	 * fully qualified class name of the resource
 	 * implementation.
@@ -28,9 +26,11 @@ public class JarResourceNode extends ResourceNode {
 	 * optional resources directory.
 	 * @param sharedResourcesDir The optional shared
 	 * resources directory <code>String</code>.
+	 * @param jarLocation The <code>String</code>
+	 * resource JAR file location.
 	 */
-	public JarResourceNode(final String jarLocation, final String classname, final String configLocation,
-			final String resourcesDir, final String sharedResourcesDir) {
+	JarResourceNode(final String classname, final String configLocation, final String resourcesDir,
+			final String sharedResourcesDir, final String jarLocation) {
 		super(classname, configLocation, resourcesDir, sharedResourcesDir);
 		this.jarLocation = jarLocation;
 	}
