@@ -23,7 +23,7 @@ import org.xml.sax.SAXException;
  * @author Yi Wang (Neakor)
  * @version 1.0.0
  */
-class DebugResourceNode extends ResourceNode {
+public class DebugResourceNode extends ResourceNode {
 	/**
 	 * The <code>String</code> optional shared resource
 	 * configuration file path.
@@ -45,7 +45,7 @@ class DebugResourceNode extends ResourceNode {
 	 * @param sharedConfigPath The <code>String</code>
 	 * optional shared resource configuration file path.
 	 */
-	DebugResourceNode(final String classname, final String configLocation, final String resourcesDir,
+	public DebugResourceNode(final String classname, final String configLocation, final String resourcesDir,
 			final String sharedResourcesDir, final String sharedConfigPath) {
 		super(classname, configLocation, resourcesDir, sharedResourcesDir);
 		this.sharedConfigPath = sharedConfigPath;
