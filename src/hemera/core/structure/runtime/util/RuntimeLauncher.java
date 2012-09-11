@@ -17,7 +17,7 @@ import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.util.IRuntimeLauncher;
 import hemera.core.utility.FileUtils;
 import hemera.core.utility.data.TimeData;
-import hemera.core.utility.logging.CLogging;
+import hemera.core.utility.logging.LoggingConfig;
 import hemera.core.utility.logging.FileLogger;
 
 import java.io.File;
@@ -103,10 +103,10 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 		final Document document = FileUtils.instance.readAsDocument(new File(this.configPath));
 		final Configuration config = new Configuration(document);
 		// Set logging configuration.
-		CLogging.Enabled.setValue(config.runtime.logging.enabled);
-		CLogging.Directory.setValue(config.runtime.logging.directory);
-		CLogging.FileSize.setValue(config.runtime.logging.fileSize);
-		CLogging.FileCount.setValue(config.runtime.logging.fileCount);
+		LoggingConfig.Enabled.setValue(config.runtime.logging.enabled);
+		LoggingConfig.Directory.setValue(config.runtime.logging.directory);
+		LoggingConfig.FileSize.setValue(config.runtime.logging.fileSize);
+		LoggingConfig.FileCount.setValue(config.runtime.logging.fileCount);
 		// Create runtime.
 		final IExecutionService service = this.newExecutionService(config);
 		final IRuntime runtime = this.newRuntime(service, config);
