@@ -134,6 +134,7 @@ public abstract class Runtime implements IRuntime {
 			// Dispose all resources.
 			for(final IResource resource : this.resources.values()) {
 				try {
+					this.logger.info("Disposing " + resource.getClass().getName() + "...");
 					resource.dispose();
 				} catch (final Exception e) {
 					this.logger.severe("Failed to dispose resource: " + resource.getClass().getName());
@@ -142,6 +143,7 @@ public abstract class Runtime implements IRuntime {
 			}
 			// Subclass shutdown.
 			try {
+				this.logger.info("Shutting down components...");
 				this.shutdownComponents();
 			} catch (final Exception e) {
 				this.logger.severe("Failed to shutdown runtime type specific procedures");
@@ -149,6 +151,7 @@ public abstract class Runtime implements IRuntime {
 			}
 			// Shutdown services.
 			try {
+				this.logger.info("Shutting down execution service...");
 				if (wait) this.service.shutdownAndWait();
 				else this.service.shutdown();
 			} catch (final Exception e) {
