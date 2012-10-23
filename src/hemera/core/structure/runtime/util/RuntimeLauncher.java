@@ -27,6 +27,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -86,7 +87,7 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 
 	@Override
 	public void stop() throws Exception {
-		this.runtime.shutdownAwait();
+		this.runtime.shutdownAwait(10, TimeUnit.SECONDS);
 	}
 
 	@Override

@@ -3,6 +3,7 @@ package hemera.core.structure.interfaces.runtime;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import hemera.core.structure.interfaces.IResource;
 import hemera.core.structure.interfaces.IResourceRegistry;
@@ -82,14 +83,21 @@ public interface IRuntime extends IResourceRegistry {
 	 * method.
 	 * <p>
 	 * This method waits for all services to completely
-	 * shutdown before returning.
+	 * shutdown before returning for the specified
+	 * amount of time. If the services fail to shutdown
+	 * within the time frame, a forceful shutdown is
+	 * issued causing thread interruptions.
 	 * <p>
 	 * This method internally catches all exceptions at
 	 * every single procedure step to ensure each shut
 	 * down step is properly executed. It is guaranteed
 	 * that this method does not throw any exceptions.
+	 * @param time The <code>Long</code> wait time value.
+	 * A value less than or equal to 0 means no waiting
+	 * and issue forced shutdown immediately.
+	 * @param unit The <code>TimeUnit</code> of the value.
 	 */
-	public void shutdownAwait();
+	public void shutdownAwait(final long time, final TimeUnit unit);
 	
 	/**
 	 * Add an instance of the given resource class to the

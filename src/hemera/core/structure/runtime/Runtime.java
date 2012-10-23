@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -112,12 +113,12 @@ public abstract class Runtime implements IRuntime {
 
 	@Override
 	public final void shutdown() {
-		this.shutdown(false);
+		this.shutdown(false, 0, null);
 	}
 
 	@Override
-	public final void shutdownAwait() {
-		this.shutdown(true);
+	public final void shutdownAwait(final long time, final TimeUnit unit) {
+		this.shutdown(true, time, unit);
 	}
 
 	/**
@@ -125,8 +126,12 @@ public abstract class Runtime implements IRuntime {
 	 * boolean value.
 	 * @param wait <code>true</code> if wait before
 	 * returning. <code>false</code> otherwise.
+	 * @param time The <code>Long</code> wait time value.
+	 * A value less than or equal to 0 means no waiting
+	 * and issue forced shutdown immediately.
+	 * @param unit The <code>TimeUnit</code> of the value.
 	 */
-	private void shutdown(final boolean wait) {
+	private void shutdown(final boolean wait, final long time, final TimeUnit unit) {
 		this.lock.lock();
 		try {
 			if (!this.activated) return;
@@ -152,7 +157,7 @@ public abstract class Runtime implements IRuntime {
 			// Shutdown services.
 			try {
 				this.logger.info("Shutting down execution service...");
-				if (wait) this.service.shutdownAndWait();
+				if (wait) this.service.forceShutdown(time, unit);
 				else this.service.shutdown();
 			} catch (final Exception e) {
 				this.logger.severe("Failed to shutdown execution service");
