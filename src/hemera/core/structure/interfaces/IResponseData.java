@@ -15,9 +15,12 @@ import org.json.JSONObject;
 public interface IResponseData {
 
 	/**
-	 * Convert the data into JSON format for response.
+	 * Convert the data into JSON format for response
+	 * with the optional given arguments.
+	 * @param args The optional <code>Object</code>
+	 * variable arguments necessary for conversion.
 	 * @return The <code>JSONObject</code> data.
 	 * @throws Exception If any processing failed.
 	 */
-	public JSONObject toJSON() throws Exception;
+	public JSONObject toJSON(final Object... args) throws Exception;
 }
