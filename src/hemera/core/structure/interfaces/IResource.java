@@ -208,12 +208,12 @@ public interface IResource {
 	/**
 	 * Retrieve the processor responsible for given
 	 * URI and HTTP method.
-	 * @param uri The optional <code>String</code> URI
+	 * @param path The optional <code>String</code> path
 	 * elements array.
 	 * @param method The <code>EHttpMethod</code> value.
 	 * @return The <code>IProcessor</code> instance.
 	 * <code>null</code> if there are no processors
 	 * provided for the method.
 	 */
-	public IProcessor<?, ?> getProcessor(final String[] uri, final EHttpMethod method);
+	public IProcessor<?, ?> getProcessor(final String[] path, final EHttpMethod method);
 }

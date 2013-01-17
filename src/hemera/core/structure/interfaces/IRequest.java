@@ -30,7 +30,7 @@ public interface IRequest {
 	/**
 	 * Parse and validate the given HTTP arguments to
 	 * finalize the request instance.
-	 * @param uri The optional <code>String</code> URI
+	 * @param path The optional <code>String</code> path
 	 * elements array.
 	 * @param arguments The <code>Map</code> contents of
 	 * a HTTP request to be processed. The values in the
@@ -40,5 +40,5 @@ public interface IRequest {
 	 * invalid value is received, thus rejected by the
 	 * request.
 	 */
-	public void parse(final String[] uri, final Map<String, Object> arguments) throws Exception;
+	public void parse(final String[] path, final Map<String, Object> arguments) throws Exception;
 }
