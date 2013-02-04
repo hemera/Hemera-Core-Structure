@@ -52,7 +52,7 @@ public abstract class AbstractResponse implements IResponse {
 	}
 
 	@Override
-	public final JSONObject toJSON() throws Exception {
+	public JSONObject toJSON() throws Exception {
 		final JSONObject data = new JSONObject();
 		data.put("http_status", this.status.name());
 		if (this.status == EHttpStatus.C200_OK) {
