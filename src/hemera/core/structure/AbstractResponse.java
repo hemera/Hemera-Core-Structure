@@ -17,11 +17,11 @@ public abstract class AbstractResponse implements IResponse {
 	/**
 	 * The <code>EHttpStatus</code> value.
 	 */
-	private final EHttpStatus status;
+	protected final EHttpStatus status;
 	/**
 	 * The <code>String</code> error message.
 	 */
-	private final String error;
+	protected final String error;
 	
 	/**
 	 * Constructor of <code>AbstractResponse</code>.
