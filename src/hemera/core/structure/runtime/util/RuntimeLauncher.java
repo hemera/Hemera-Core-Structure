@@ -48,7 +48,7 @@ import org.xml.sax.SAXException;
  * file path for the runtime configuration file.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.1
  */
 public abstract class RuntimeLauncher implements IRuntimeLauncher {
 	/**
