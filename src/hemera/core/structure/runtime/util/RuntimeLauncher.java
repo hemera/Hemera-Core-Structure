@@ -5,11 +5,11 @@ import hemera.core.environment.enumn.EEnvironment;
 import hemera.core.environment.ham.HAM;
 import hemera.core.environment.ham.HAMResource;
 import hemera.core.environment.util.UEnvironment;
+import hemera.core.execution.AbstractServiceListener;
 import hemera.core.execution.assisted.AssistedService;
 import hemera.core.execution.exception.FileExceptionHandler;
 import hemera.core.execution.interfaces.IExceptionHandler;
 import hemera.core.execution.interfaces.IExecutionService;
-import hemera.core.execution.interfaces.IServiceListener;
 import hemera.core.execution.listener.FileServiceListener;
 import hemera.core.execution.scalable.ScalableService;
 import hemera.core.structure.interfaces.IResource;
@@ -143,13 +143,14 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 	 * listener implementation cannot be instantiated.
 	 */
 	@SuppressWarnings("unchecked")
-	private IServiceListener newServiceListener(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+	private AbstractServiceListener newServiceListener(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException,
+	IllegalAccessException {
 		final String listenerJarLocation = config.runtime.execution.listener.jarLocation;
 		final String listenerClassname = config.runtime.execution.listener.classname;
 		if (listenerJarLocation != null && listenerClassname != null) {
 			final File jarFile = new File(listenerJarLocation);
 			final URLClassLoader classloader = new URLClassLoader(new URL[] {jarFile.toURI().toURL()});
-			final Class<IServiceListener> c = (Class<IServiceListener>)classloader.loadClass(listenerClassname);
+			final Class<? extends AbstractServiceListener> c = (Class<? extends AbstractServiceListener>)classloader.loadClass(listenerClassname);
 			return c.newInstance();
 		} else {
 			return new FileServiceListener();
@@ -171,9 +172,10 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 	 * @throws InstantiationException If custom class
 	 * implementations cannot be instantiated.
 	 */
-	private IExecutionService newExecutionService(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+	private IExecutionService newExecutionService(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException,
+	IllegalAccessException {
 		final IExceptionHandler handler = this.newExceptionHandler(config);
-		final IServiceListener listener = this.newServiceListener(config);
+		final AbstractServiceListener listener = this.newServiceListener(config);
 		// Create service based on configuration.
 		final boolean useScalableService = config.runtime.execution.useScalableService;
 		if (!useScalableService) {
@@ -205,7 +207,8 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 	 * handler implementation cannot be instantiated.
 	 */
 	@SuppressWarnings("unchecked")
-	private IExceptionHandler newExceptionHandler(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+	private IExceptionHandler newExceptionHandler(final Configuration config) throws IOException, ClassNotFoundException, InstantiationException,
+	IllegalAccessException {
 		final String exceptionJarLocation = config.runtime.execution.handler.jarLocation;
 		final String exceptionClassname = config.runtime.execution.handler.classname;
 		if (exceptionJarLocation != null && exceptionClassname != null) {
