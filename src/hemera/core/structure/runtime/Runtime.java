@@ -209,7 +209,7 @@ public abstract class Runtime implements IRuntime {
 			// Logging.
 			final StringBuilder builder = new StringBuilder();
 			builder.append("Resource ").append(resourceClass.getName()).append(" deployed at path: ");
-			if (applicationPath != null) builder.append(applicationPath).append("/");
+			if (applicationPath != null) builder.append("/").append(applicationPath).append("/");
 			builder.append(resource.getPath()).append("/");
 			this.logger.info(builder.toString());
 			return true;
@@ -259,7 +259,7 @@ public abstract class Runtime implements IRuntime {
 		if (!succeeded) {
 			final StringBuilder builder = new StringBuilder();
 			builder.append("Duplicate resource at path: ");
-			if (applicationPath != null) builder.append(applicationPath).append("/");
+			if (applicationPath != null) builder.append("/").append(applicationPath).append("/");
 			builder.append(path).append("/ Deployment aborted.");
 			this.logger.severe(builder.toString());
 			return null;
