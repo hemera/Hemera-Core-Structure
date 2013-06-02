@@ -3,7 +3,6 @@ package hemera.core.structure.runtime.util;
 import hemera.core.environment.config.Configuration;
 import hemera.core.environment.enumn.EEnvironment;
 import hemera.core.environment.ham.HAM;
-import hemera.core.environment.ham.HAMResource;
 import hemera.core.environment.util.UEnvironment;
 import hemera.core.execution.AbstractServiceListener;
 import hemera.core.execution.assisted.AssistedService;
@@ -12,6 +11,8 @@ import hemera.core.execution.interfaces.IExceptionHandler;
 import hemera.core.execution.interfaces.IExecutionService;
 import hemera.core.execution.listener.FileServiceListener;
 import hemera.core.execution.scalable.ScalableService;
+import hemera.core.structure.hab.HAB;
+import hemera.core.structure.hab.ResourceNode;
 import hemera.core.structure.interfaces.IResource;
 import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.util.IRuntimeLauncher;
@@ -29,12 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 /**
  * <code>RuntimeLauncher</code> defines the abstraction
@@ -48,7 +46,7 @@ import org.xml.sax.SAXException;
  * file path for the runtime configuration file.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.1
+ * @version 1.0.4
  */
 public abstract class RuntimeLauncher implements IRuntimeLauncher {
 	/**
@@ -240,80 +238,52 @@ public abstract class RuntimeLauncher implements IRuntimeLauncher {
 		final String appsDir = UEnvironment.instance.getInstalledAppsDir();
 		// Scan all HAM files.
 		final List<File> hamFiles = FileUtils.instance.getFiles(appsDir, EEnvironment.HAMExtension.value);
-		// Parse out resource configurations.
-		final List<JarResourceNode> resources = new ArrayList<JarResourceNode>();
+		// Parse out HAB instances.
+		final List<HAB> habs = new ArrayList<HAB>();
 		final int hamSize = hamFiles.size();
 		for (int i = 0; i < hamSize; i++) {
 			final File hamFile = hamFiles.get(i);
-			resources.addAll(this.parseResourceNodes(hamFile));
+			final Document document = FileUtils.instance.readAsDocument(hamFile);
+			final HAM ham = new HAM(document);
+			habs.add(new HAB(ham));
 		}
-		// Deploy all resources.
-		final int size = resources.size();
+		// Deploy all applications.
+		final int size = habs.size();
 		for (int i = 0; i < size; i++) {
-			final JarResourceNode resource = resources.get(i);
-			this.deployResource(resource, runtime);
+			final HAB hab = habs.get(i);
+			this.deployHAB(hab, runtime);
 		}
 	}
 
 	/**
-	 * Parse the HAM file and retrieve the application
-	 * resource nodes.
-	 * @param hamFile The HAM <code>File</code>.
-	 * @return The <code>List</code> of all the auto-
-	 * deploy <code>JarResourceNode</code>.
-	 * @throws IOException If file parsing failed.
-	 * @throws ParserConfigurationException If XML
-	 * parsing failed.
-	 * @throws SAXException If XML parsing failed. 
-	 */
-	private List<JarResourceNode> parseResourceNodes(final File hamFile) throws IOException, SAXException, ParserConfigurationException {
-		// Parse HAM file.
-		final Document document = FileUtils.instance.readAsDocument(hamFile);
-		final HAM ham = new HAM(document);
-		final String sharedResourcesDir = (ham.shared==null) ? null : ham.shared.resourcesDir;
-		// Parse all resources.
-		final String appDir = UEnvironment.instance.getApplicationDir(ham.applicationName);
-		final int size = ham.resources.size();
-		final List<JarResourceNode> list = new ArrayList<JarResourceNode>(size);
-		for (int i = 0; i < size; i++) {
-			final HAMResource hamResource = ham.resources.get(i);
-			final StringBuilder jarPath = new StringBuilder();
-			jarPath.append(appDir).append(hamResource.classname).append(File.separator);
-			jarPath.append(hamResource.classname).append(".jar");
-			final JarResourceNode resource = new JarResourceNode(hamResource.classname, hamResource.configFile,
-					hamResource.resourcesDir, sharedResourcesDir, jarPath.toString());
-			list.add(resource);
-		}
-		return list;
-	}
-
-	/**
-	 * Deploy the resource defined by the given resource
-	 * node.
-	 * @param resource The <code>JarResourceNode</code>.
+	 * Deploy the application defined by the given
+	 * HAB data structure.
+	 * @param hab The <code>HAB</code> instance.
 	 * @param runtime The <code>IRuntime</code> instance.
 	 * @throws Exception If any processing failed.
 	 */
 	@SuppressWarnings("unchecked")
-	private void deployResource(final JarResourceNode resource, final IRuntime runtime) throws Exception {
-		// Load and instantiate resource.
-		final URL jarurl = new File(resource.jarLocation).toURI().toURL();
-		final URLClassLoader loader = new URLClassLoader(new URL[] {jarurl});
-		final Class<? extends IResource> resourceClass = (Class<? extends IResource>)loader.loadClass(resource.classname);
-		// Add resource.
-		InputStream configStream = null;
-		if (resource.configLocation != null) {
-			final URL configURL = new File(resource.configLocation).toURI().toURL();
-			configStream = configURL.openStream();
+	private void deployHAB(final HAB hab, final IRuntime runtime) throws Exception {
+		for (final ResourceNode resource : hab.resources) {
+			// Load and instantiate resource.
+			final URL jarurl = new File(resource.jarLocation).toURI().toURL();
+			final URLClassLoader loader = new URLClassLoader(new URL[] {jarurl});
+			final Class<? extends IResource> resourceClass = (Class<? extends IResource>)loader.loadClass(resource.classname);
+			// Add resource.
+			InputStream configStream = null;
+			if (resource.configLocation != null) {
+				final URL configURL = new File(resource.configLocation).toURI().toURL();
+				configStream = configURL.openStream();
+			}
+			final List<File> resources = (resource.resourcesDir==null&&resource.sharedResourcesDir==null) ? null : new ArrayList<File>();
+			if (resource.resourcesDir != null) {
+				resources.addAll(FileUtils.instance.getFiles(resource.resourcesDir));
+			}
+			if (resource.sharedResourcesDir != null) {
+				resources.addAll(FileUtils.instance.getFiles(resource.sharedResourcesDir));
+			}
+			runtime.add(hab.applicationPath, resourceClass, configStream, resources);
 		}
-		final List<File> resources = (resource.resourcesDir==null&&resource.sharedResourcesDir==null) ? null : new ArrayList<File>();
-		if (resource.resourcesDir != null) {
-			resources.addAll(FileUtils.instance.getFiles(resource.resourcesDir));
-		}
-		if (resource.sharedResourcesDir != null) {
-			resources.addAll(FileUtils.instance.getFiles(resource.sharedResourcesDir));
-		}
-		runtime.add(resourceClass, configStream, resources);
 	}
 	
 	@Override

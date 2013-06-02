@@ -17,6 +17,7 @@ import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.util.IRuntimeHandle;
 import hemera.core.utility.FileUtils;
 import hemera.core.utility.logging.FileLogger;
+import hemera.core.utility.uri.RESTURI;
 
 /**
  * <code>Runtime</code> defines the abstraction of the
@@ -24,7 +25,7 @@ import hemera.core.utility.logging.FileLogger;
  * running resources on a physical or virtual machine.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.4
  */
 public abstract class Runtime implements IRuntime {
 	/**
@@ -185,12 +186,12 @@ public abstract class Runtime implements IRuntime {
 	protected abstract void shutdownComponents() throws Exception;
 
 	@Override
-	public final boolean add(final Class<? extends IResource> resourceClass, final InputStream configStream,
-			final List<File> resources) throws Exception {
+	public final boolean add(final String applicationPath, final Class<? extends IResource> resourceClass,
+			final InputStream configStream, final List<File> resources) throws Exception {
 		try {
 			this.statusCheck();
 			// Cache resource instance and check for duplicate.
-			final IResource resource = this.addCache(resourceClass);
+			final IResource resource = this.addResource(applicationPath, resourceClass);
 			if (resource == null) return false;
 			//  Injection services.
 			this.injectServices(resource);
@@ -224,6 +225,8 @@ public abstract class Runtime implements IRuntime {
 	 * Add an instance of the given resource class into
 	 * the resources store if it is not already added.
 	 * All duplicates are ignored and logged.
+	 * @param applicationPath The <code>String</code>
+	 * optional application path.
 	 * @param resourceClass The <code>Class</code> of the
 	 * resource to be added and hosted by the runtime.
 	 * @return The added <code>IResource</code> instance if
@@ -234,9 +237,19 @@ public abstract class Runtime implements IRuntime {
 	 * @throws InstantiationException If instantiation
 	 * failed.
 	 */
-	private IResource addCache(final Class<? extends IResource> resourceClass) throws InstantiationException, IllegalAccessException {
+	private IResource addResource(final String applicationPath, final Class<? extends IResource> resourceClass)
+			throws InstantiationException, IllegalAccessException {
+		// Compose path.
+		final StringBuilder pathBuilder = new StringBuilder();
+		if (applicationPath != null) {
+			pathBuilder.append(applicationPath);
+		}
 		final IResource resource = resourceClass.newInstance();
-		final String path = resource.getPath();
+		final String resourcePath = resource.getPath();
+		if (resourcePath != null) {
+			pathBuilder.append(resourcePath);
+		}
+		final String path = pathBuilder.toString();
 		// Early check.
 		if (this.resources.containsKey(path)) return null;
 		// Try to add.
@@ -305,8 +318,23 @@ public abstract class Runtime implements IRuntime {
 	}
 
 	@Override
-	public IResource getResource(final String path) {
-		return this.resources.get(path);
+	public IResource getResource(final RESTURI uri) {
+		// First check empty resource.
+		if (uri.elements.isEmpty()) {
+			return this.resources.get("");
+		}
+		// Poll each element from URI.
+		final StringBuilder builder = new StringBuilder();
+		while (!uri.elements.isEmpty()) {
+			final String element = uri.elements.poll();
+			builder.append(element);
+			final IResource resource = this.resources.get(builder.toString());
+			if (resource != null) {
+				return resource;
+			}
+		}
+		// Nothing found.
+		return null;
 	}
 
 	/**

@@ -1,36 +1,43 @@
-package hemera.core.structure.runtime.util;
+package hemera.core.structure.hab;
 
 /**
- * <code>ModuleNode</code> defines the immutable data
- * structure of a module with its defining fields.
+ * <code>ResourceNode</code> defines the immutable data
+ * structure of a resource with its defining fields.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.4
  */
-abstract class ResourceNode {
+public class ResourceNode {
+	/**
+	 * The <code>String</code> resource JAR file
+	 * location.
+	 */
+	public final String jarLocation;
 	/**
 	 * The <code>String</code> fully qualified class
 	 * name of the module implementation.
 	 */
-	final String classname;
+	public final String classname;
 	/**
 	 * The <code>String</code> optional module
 	 * configuration file location.
 	 */
-	final String configLocation;
+	public final String configLocation;
 	/**
 	 * The <code>String</code> optional module
 	 * resources directory.
 	 */
-	final String resourcesDir;
+	public final String resourcesDir;
 	/**
 	 * The <code>String</code> optional shared
 	 * resources directory.
 	 */
-	final String sharedResourcesDir;
+	public final String sharedResourcesDir;
 
 	/**
-	 * Constructor of <code>ModuleNode</code>.
+	 * Constructor of <code>ResourceNode</code>.
+	 * @param jarLocation The <code>String</code>
+	 * resource JAR file location.
 	 * @param classname The <code>String</code>
 	 * fully qualified class name of the module
 	 * implementation.
@@ -42,8 +49,9 @@ abstract class ResourceNode {
 	 * @param sharedResourcesDir The optional shared
 	 * resources directory <code>String</code>.
 	 */
-	ResourceNode(final String classname, final String configLocation, final String resourcesDir,
+	protected ResourceNode(final String jarLocation, final String classname, final String configLocation, final String resourcesDir,
 			final String sharedResourcesDir) {
+		this.jarLocation = jarLocation;
 		this.classname = classname;
 		this.configLocation = configLocation;
 		this.resourcesDir = resourcesDir;

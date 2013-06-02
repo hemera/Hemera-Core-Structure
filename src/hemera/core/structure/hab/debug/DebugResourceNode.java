@@ -1,5 +1,6 @@
-package hemera.core.structure.runtime.util;
+package hemera.core.structure.hab.debug;
 
+import hemera.core.structure.hab.ResourceNode;
 import hemera.core.utility.FileUtils;
 
 import java.io.File;
@@ -17,11 +18,11 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /**
- * <code>DebugResourceNode</code> defines the immutable
- * extension of a resource node in debugging mode.
+ * <code>DebugResourceNode</code> defines the extension
+ * of a resource node that provides debugging support.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.4
  */
 public class DebugResourceNode extends ResourceNode {
 	/**
@@ -31,23 +32,14 @@ public class DebugResourceNode extends ResourceNode {
 	final String sharedConfigPath;
 
 	/**
-	 * Constructor of <code>JarResourceNode</code>.
-	 * @param classname The <code>String</code>
-	 * fully qualified class name of the resource
-	 * implementation.
-	 * @param configLocation The <code>String</code>
-	 * resource configuration file location. This is
-	 * an optional value and can be <code>null</code>.
-	 * @param resourcesDir The <code>String</code>
-	 * optional resources directory.
-	 * @param sharedResourcesDir The optional shared
-	 * resources directory <code>String</code>.
+	 * Constructor of <code>DebugResourceNode</code>.
+	 * @param resourceNode The <code>ResourceNode</code>.
 	 * @param sharedConfigPath The <code>String</code>
 	 * optional shared resource configuration file path.
 	 */
-	public DebugResourceNode(final String classname, final String configLocation, final String resourcesDir,
-			final String sharedResourcesDir, final String sharedConfigPath) {
-		super(classname, configLocation, resourcesDir, sharedResourcesDir);
+	public DebugResourceNode(final ResourceNode resourceNode, final String sharedConfigPath) {
+		super(resourceNode.jarLocation, resourceNode.classname, resourceNode.configLocation,
+				resourceNode.resourcesDir, resourceNode.sharedResourcesDir);
 		this.sharedConfigPath = sharedConfigPath;
 	}
 	
@@ -69,7 +61,7 @@ public class DebugResourceNode extends ResourceNode {
 	 * @throws TransformerException If writing the
 	 * XML document failed.
 	 */
-	File processConfig(final String tempDir) throws IOException, SAXException, ParserConfigurationException, TransformerException {
+	public File processConfig(final String tempDir) throws IOException, SAXException, ParserConfigurationException, TransformerException {
 		if (this.sharedConfigPath == null) {
 			if (this.configLocation == null) return null;
 			else return new File(this.configLocation);

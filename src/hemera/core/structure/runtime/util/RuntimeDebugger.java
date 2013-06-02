@@ -17,9 +17,12 @@ import org.xml.sax.SAXException;
 
 import hemera.core.environment.config.Configuration;
 import hemera.core.environment.enumn.EEnvironment;
+import hemera.core.environment.ham.HAM;
 import hemera.core.environment.hbm.HBM;
-import hemera.core.environment.hbm.HBMResource;
 import hemera.core.environment.util.UEnvironment;
+import hemera.core.structure.hab.ResourceNode;
+import hemera.core.structure.hab.debug.DebugHAB;
+import hemera.core.structure.hab.debug.DebugResourceNode;
 import hemera.core.structure.interfaces.IResource;
 import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.util.IRuntimeLauncher;
@@ -31,7 +34,7 @@ import hemera.core.utility.FileUtils;
  * a contained JVM for debugging.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.4
  */
 public class RuntimeDebugger {
 	/**
@@ -39,9 +42,9 @@ public class RuntimeDebugger {
 	 */
 	private final String homeDir;
 	/**
-	 * The <code>List</code> of <code>DebugResourceNode</code>.
+	 * The <code>List</code> of <code>DebugHAB</code>.
 	 */
-	private final List<DebugResourceNode> resources;
+	private final List<DebugHAB> habs;
 
 	/**
 	 * Constructor of <code>RuntimeDebugger</code>.
@@ -50,7 +53,9 @@ public class RuntimeDebugger {
 	 */
 	public RuntimeDebugger(final String homeDir) {
 		this.homeDir = FileUtils.instance.getValidDir(homeDir);
-		this.resources = new ArrayList<DebugResourceNode>();
+		this.habs = new ArrayList<DebugHAB>();
+		// Explicitly set the home directory so we don't use the current Jar.
+		UEnvironment.instance.setInstalledHomeDir(this.homeDir);
 	}
 
 	/**
@@ -58,8 +63,6 @@ public class RuntimeDebugger {
 	 * @throws Exception If any launching logic failed.
 	 */
 	public void start() throws Exception {
-		// Explicitly set the home directory so we don't use the current Jar.
-		UEnvironment.instance.setInstalledHomeDir(this.homeDir);
 		// Create the temporary directory to store configuration files.
 		new File(UEnvironment.instance.getInstalledTempDir()).mkdirs();
 		// Initialize and start runtime environment launcher.
@@ -101,7 +104,7 @@ public class RuntimeDebugger {
 		launcher.init(new LauncherContext(new String[] {configPath}));
 		return launcher;
 	}
-	
+
 	/**
 	 * Deploy all the added resources with the given
 	 * runtime.
@@ -112,33 +115,36 @@ public class RuntimeDebugger {
 	@SuppressWarnings("unchecked")
 	private void deployResources(final IRuntime runtime) throws Exception {
 		final String tempDir = UEnvironment.instance.getInstalledTempDir();
-		final int size = this.resources.size();
+		final int size = this.habs.size();
 		for (int i = 0; i < size; i++) {
-			final DebugResourceNode resource = this.resources.get(i);
-			// Process shared and resource configuration.
-			final File configFile = resource.processConfig(tempDir);
-			// Load and instantiate resource.
-			final Class<? extends IResource> resourceclass = (Class<? extends IResource>)this.getClass().getClassLoader().loadClass(resource.classname);
-			// Add resource.
-			InputStream configStream = null;
-			if (configFile != null) {
-				final URL configURL = configFile.toURI().toURL();
-				configStream = configURL.openStream();
+			final DebugHAB hab = this.habs.get(i);
+			for (final ResourceNode resourceNode : hab.resources) {
+				final DebugResourceNode resource = new DebugResourceNode(resourceNode, hab.sharedConfigPath);
+				// Process shared and resource configuration.
+				final File configFile = resource.processConfig(tempDir);
+				// Load and instantiate resource.
+				final Class<? extends IResource> resourceclass = (Class<? extends IResource>)this.getClass().getClassLoader().loadClass(resource.classname);
+				// Add resource.
+				InputStream configStream = null;
+				if (configFile != null) {
+					final URL configURL = configFile.toURI().toURL();
+					configStream = configURL.openStream();
+				}
+				final List<File> resources = (resource.resourcesDir==null&&resource.sharedResourcesDir==null) ? null : new ArrayList<File>();
+				if (resource.resourcesDir != null) {
+					resources.addAll(FileUtils.instance.getFiles(resource.resourcesDir));
+				}
+				if (resource.sharedResourcesDir != null) {
+					resources.addAll(FileUtils.instance.getFiles(resource.sharedResourcesDir));
+				}
+				runtime.add(hab.applicationPath, resourceclass, configStream, resources);
 			}
-			final List<File> resources = (resource.resourcesDir==null&&resource.sharedResourcesDir==null) ? null : new ArrayList<File>();
-			if (resource.resourcesDir != null) {
-				resources.addAll(FileUtils.instance.getFiles(resource.resourcesDir));
-			}
-			if (resource.sharedResourcesDir != null) {
-				resources.addAll(FileUtils.instance.getFiles(resource.sharedResourcesDir));
-			}
-			runtime.add(resourceclass, configStream, resources);
 		}
 	}
 
 	/**
-	 * Add all the resources defined in the HBM file at
-	 * given path for debugging.
+	 * Add all the application defined in the HBM file
+	 * for debugging.
 	 * @param hbmPath The <code>String</code> path to
 	 * the HBM file.
 	 * @throws IOException If reading file failed.
@@ -147,26 +153,12 @@ public class RuntimeDebugger {
 	 * file failed.
 	 */
 	public void addHBM(final String hbmPath) throws IOException, SAXException, ParserConfigurationException {
+		// Convert to HAM.
 		final Document document = FileUtils.instance.readAsDocument(new File(hbmPath));
 		final HBM hbm = new HBM(document);
-		final String sharedResourcesDir = (hbm.shared==null) ? null : hbm.shared.resourcesDir;
-		final String sharedConfigPath = (hbm.shared==null) ? null : hbm.shared.configFile;
-		final int size = hbm.resources.size();
-		for (int i = 0; i < size; i++) {
-			final HBMResource resource = hbm.resources.get(i);
-			final DebugResourceNode node = new DebugResourceNode(resource.classname, resource.configFile,
-					resource.resourcesDir, sharedResourcesDir, sharedConfigPath);
-			this.addResource(node);
-		}
-	}
-
-	/**
-	 * Add the given resource node for debugging.
-	 * @param resource The <code>DebugResourceNode</code>
-	 * to add.
-	 */
-	public void addResource(final DebugResourceNode resource) {
-		this.resources.add(resource);
+		final HAM ham = new HAM(hbm);
+		// Convert to HAB.
+		this.habs.add(new DebugHAB(ham));
 	}
 
 	/**
@@ -201,7 +193,7 @@ public class RuntimeDebugger {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * <code>DebuggerHook</code> defines the JVM shutdown
 	 * hook of the debugger.

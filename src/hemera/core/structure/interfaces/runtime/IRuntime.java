@@ -26,7 +26,7 @@ import hemera.core.structure.interfaces.IResourceRegistry;
  * when removed or during runtime shutdown.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.4
  */
 public interface IRuntime extends IResourceRegistry {
 
@@ -101,12 +101,15 @@ public interface IRuntime extends IResourceRegistry {
 	
 	/**
 	 * Add an instance of the given resource class to the
-	 * runtime environment with its defined REST path as
-	 * its unique identifier, and the specified
-	 * configuration stream for resource customization.
+	 * runtime environment with its application path and
+	 * resource path as its unique identifier, and the
+	 * specified configuration stream for resource
+	 * customization.
 	 * <p>
 	 * This method provides the necessary thread-safety
 	 * guarantees with high concurrency capabilities.
+	 * @param applicationPath The <code>String</code>
+	 * optional application path.
 	 * @param resourceClass The <code>Class</code> of the
 	 * resource to be added and hosted by the runtime.
 	 * @param configStream The optional configuration
@@ -122,7 +125,8 @@ public interface IRuntime extends IResourceRegistry {
 	 * REST path.
 	 * @throws Exception If any procedure failed.
 	 */
-	public boolean add(final Class<? extends IResource> resourceClass, final InputStream configStream, final List<File> resources) throws Exception;
+	public boolean add(final String applicationPath, final Class<? extends IResource> resourceClass,
+			final InputStream configStream, final List<File> resources) throws Exception;
 	
 	/**
 	 * Remove the resource instance with with given REST

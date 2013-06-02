@@ -1,22 +1,27 @@
 package hemera.core.structure.interfaces;
 
+import hemera.core.utility.uri.RESTURI;
+
 /**
  * <code>IResourceRegistry</code> defines the interface
  * of a registry service that provides access to a set
  * of resources based on defined REST path.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.0
+ * @version 1.0.4
  */
 public interface IResourceRegistry {
 	
 	/**
 	 * Retrieve the resource defined for the given REST
-	 * access path.
-	 * @param path The <code>String</code> REST access
-	 * path to check.
+	 * URI.
+	 * <p>
+	 * This method attempts to <code>poll</code> one
+	 * element off of the <code>RESTURI</code> at a time
+	 * until a resource is found.
+	 * @param path The <code>RESTURI</code> to check.
 	 * @return The <code>IResource</code> instance. Or
 	 * <code>null</code> if there is no such resource.
 	 */
-	public IResource getResource(final String path);
+	public IResource getResource(final RESTURI uri);
 }
