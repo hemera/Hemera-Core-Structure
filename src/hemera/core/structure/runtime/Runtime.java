@@ -208,14 +208,14 @@ public abstract class Runtime implements IRuntime {
 			resource.activate();
 			// Logging.
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Addition of resource: ").append(resourceClass.getName());
-			builder.append(" at REST path: ").append(resource.getPath()).append(" succeeded.");
+			builder.append("Resource ").append(resourceClass.getName()).append(" deployed at path: ");
+			if (applicationPath != null) builder.append(applicationPath).append("/");
+			builder.append(resource.getPath()).append("/");
 			this.logger.info(builder.toString());
 			return true;
 		} catch (final Exception e) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Addition of resource: ").append(resourceClass.getName());
-			builder.append(" failed.");
+			builder.append("Deploying resource ").append(resourceClass.getName()).append(" failed.");
 			this.logger.severe(builder.toString());
 			throw e;
 		}
@@ -258,8 +258,10 @@ public abstract class Runtime implements IRuntime {
 		// Log duplicates.
 		if (!succeeded) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Duplicate addition of resource at REST path: ").append(path).append(".");
-			this.logger.warning(builder.toString());
+			builder.append("Duplicate resource at path: ");
+			if (applicationPath != null) builder.append(applicationPath).append("/");
+			builder.append(path).append("/ Deployment aborted.");
+			this.logger.severe(builder.toString());
 			return null;
 		}
 		return resource;
@@ -285,7 +287,7 @@ public abstract class Runtime implements IRuntime {
 		final IResource resource = this.resources.remove(path);
 		if (resource == null) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Removing resource at REST path: ").append(path);
+			builder.append("Removing resource at path: ").append(path);
 			builder.append("failed. Runtime does not host the resource.");
 			this.logger.warning(builder.toString());
 			return false;
@@ -294,13 +296,13 @@ public abstract class Runtime implements IRuntime {
 			resource.dispose();
 			// Logging.
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Resource at REST path: ").append(path);
+			builder.append("Resource at path: ").append(path);
 			builder.append(" removed from runtime environment.");
 			this.logger.info(builder.toString());
 			return true;
 		} catch (Exception e) {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Removing of resource at REST path: ").append(path);
+			builder.append("Removing resource at path: ").append(path);
 			builder.append(" failed.");
 			this.logger.severe(builder.toString());
 			throw e;
