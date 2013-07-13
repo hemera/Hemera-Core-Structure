@@ -202,6 +202,8 @@ public interface IResource {
 	/**
 	 * Retrieve the HTTP access path for this resource.
 	 * @return The <code>String</code> access path.
+	 * <code>null</code> if resource is deployed at
+	 * the root path "/".
 	 */
 	public String getPath();
 	

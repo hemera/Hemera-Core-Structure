@@ -12,6 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.w3c.dom.Document;
 
 import hemera.core.execution.interfaces.IExecutionService;
+import hemera.core.structure.enumn.EHttpMethod;
 import hemera.core.structure.interfaces.IResource;
 import hemera.core.structure.interfaces.runtime.IRuntime;
 import hemera.core.structure.interfaces.runtime.util.IRuntimeHandle;
@@ -25,7 +26,7 @@ import hemera.core.utility.uri.RESTURI;
  * running resources on a physical or virtual machine.
  *
  * @author Yi Wang (Neakor)
- * @version 1.0.4
+ * @version 1.0.5
  */
 public abstract class Runtime implements IRuntime {
 	/**
@@ -210,7 +211,8 @@ public abstract class Runtime implements IRuntime {
 			final StringBuilder builder = new StringBuilder();
 			builder.append("Resource ").append(resourceClass.getName()).append(" deployed at path: ");
 			if (applicationPath != null) builder.append("/").append(applicationPath);
-			builder.append("/").append(resource.getPath()).append("/");
+			if (resource.getPath() != null) builder.append("/").append(resource.getPath());
+			builder.append("/");
 			this.logger.info(builder.toString());
 			return true;
 		} catch (final Exception e) {
@@ -320,10 +322,22 @@ public abstract class Runtime implements IRuntime {
 	}
 
 	@Override
-	public IResource getResource(final RESTURI uri) {
-		// First check empty resource.
+	public IResource getResource(final RESTURI uri, final EHttpMethod method) {
+		// If no URI elements, then must be root resource.
 		if (uri.elements.isEmpty()) {
 			return this.resources.get("");
+		}
+		// If URI has elements, and there is a root resource, make sure the
+		// resource has the processor to handle it, since the elements may
+		// be meant for a different resource or for processor paths of the
+		// root resource.
+		final IResource rootResource = this.resources.get("");
+		if (rootResource != null) {
+			final String[] path = uri.getElementArray();
+			final Object processor = rootResource.getProcessor(path, method);
+			if (processor != null) {
+				return rootResource;
+			}
 		}
 		// Poll each element from URI.
 		final StringBuilder builder = new StringBuilder();
